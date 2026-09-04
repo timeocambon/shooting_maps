@@ -1,0 +1,30 @@
+# Dependencies
+/node_modules/
+
+# Next.js
+/.next/
+/out/
+/build/
+
+# Tests
+/coverage/
+/playwright-report/
+/test-results/
+
+# Supabase local state
+/supabase/.branches/
+/supabase/.temp/
+
+# Local environment files (the example file remains committed)
+.env*
+!.env.example
+
+# Local tooling
+.DS_Store
+*.pem
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.vercel/
