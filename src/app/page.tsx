@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { MapExplorer } from "@/features/spots/components/map-explorer";
@@ -34,7 +35,9 @@ export default async function HomePage() {
           </p>
         ) : null}
 
-        <MapExplorer spots={spots} mapStyleUrl={getMapStyleUrl()} />
+        <Suspense fallback={<div className="explorer" aria-hidden="true" />}>
+          <MapExplorer spots={spots} mapStyleUrl={getMapStyleUrl()} />
+        </Suspense>
         <SiteFooter />
       </div>
     </main>

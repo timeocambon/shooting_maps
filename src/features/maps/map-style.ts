@@ -1,5 +1,9 @@
 import type { StyleSpecification } from "maplibre-gl";
 
+/** Centre et zoom par défaut : Toulouse, sans dépendre de la géolocalisation. */
+export const DEFAULT_MAP_CENTER: [number, number] = [1.4442, 43.6045];
+export const DEFAULT_MAP_ZOOM = 10.6;
+
 const openStreetMapRasterStyle: StyleSpecification = {
   version: 8,
   sources: {
