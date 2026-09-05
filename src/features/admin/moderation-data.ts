@@ -30,30 +30,23 @@ export type ProposalReview = {
     height: number | null;
     byteSize: number | null;
     signedUrl: string;
-    moderationState: "pending" | "approved" | "hidden" | "rejected";
   }>;
 };
 
 export async function getAdminDashboardCounts() {
   const supabase = await createSupabaseServerClient();
-  const [{ error: refreshError }, { error: purgeError }] = await Promise.all([
-    supabase.rpc("admin_refresh_review_due_spots"),
-    supabase.rpc("admin_purge_expired_proposals"),
-  ]);
+  const { error: refreshError } = await supabase.rpc("admin_refresh_review_due_spots");
   if (refreshError) throw refreshError;
-  if (purgeError) throw purgeError;
-  const [proposals, reports, spots, withdrawals] = await Promise.all([
+  const [proposals, reports, spots] = await Promise.all([
     supabase.from("proposals").select("id", { count: "exact", head: true }).eq("state", "submitted"),
     supabase.from("reports").select("id", { count: "exact", head: true }).eq("state", "open").eq("priority", "high"),
     supabase.from("spots").select("id", { count: "exact", head: true }).in("publication_state", ["published", "sensitive", "review_due"]),
-    supabase.from("withdrawal_requests").select("id", { count: "exact", head: true }).in("state", ["open", "in_review"]),
   ]);
 
   return {
     proposals: proposals.count ?? 0,
     priorityReports: reports.count ?? 0,
     publishedSpots: spots.count ?? 0,
-    openWithdrawals: withdrawals.count ?? 0,
   };
 }
 
@@ -85,7 +78,7 @@ export async function getProposalReview(id: string): Promise<ProposalReview | nu
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("proposals")
-    .select("id, tracking_id, contributor_email, public_pseudonym, state, submitted_at, payload, proposal_photos(id, display_order, credit, width, height, byte_size, processed_object_path, moderation_state)")
+    .select("id, tracking_id, contributor_email, public_pseudonym, state, submitted_at, payload, proposal_photos(id, display_order, credit, width, height, byte_size, processed_object_path)")
     .eq("id", id)
     .maybeSingle();
 
@@ -110,7 +103,6 @@ export async function getProposalReview(id: string): Promise<ProposalReview | nu
           height: photo.height,
           byteSize: photo.byte_size,
           signedUrl: signed?.signedUrl ?? "",
-          moderationState: photo.moderation_state,
         };
       }),
   );
