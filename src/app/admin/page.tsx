@@ -5,6 +5,7 @@ import {
   Clock3,
   Database,
   FileCheck2,
+  ScanEye,
   ShieldCheck,
 } from "lucide-react";
 import { signOutAction } from "@/app/admin/actions";
@@ -91,13 +92,14 @@ export default async function AdminPage() {
         <div className="admin-metrics">
           <article><Clock3 /><span>À vérifier</span><strong>{counts.proposals}</strong><small>Propositions soumises</small></article>
           <article><AlertTriangle /><span>Prioritaires</span><strong>{counts.priorityReports}</strong><small>Signalements ouverts</small></article>
+          <article><ScanEye /><span>Retraits</span><strong>{counts.openWithdrawals}</strong><small>Demandes en attente</small></article>
           <article><FileCheck2 /><span>Catalogue</span><strong>{counts.publishedSpots}</strong><small>Spots visibles</small></article>
         </div>
         <section className="admin-ready-card">
           <CheckCircle2 aria-hidden="true" />
-          <div><h2>Le circuit de maintenance est actif</h2><p>Les alertes prioritaires, masquages et changements du catalogue sont contrôlés côté base et ajoutés au journal de modération.</p></div>
+          <div><h2>Le circuit de maintenance est actif</h2><p>Les alertes prioritaires, masquages, retraits et purges de propositions expirées sont contrôlés côté base et ajoutés au journal de modération.</p></div>
         </section>
-        <div className="admin-action-row"><Link className="button admin-primary-action" href="/admin/propositions">Traiter les propositions</Link><Link className="button button-secondary admin-primary-action" href="/admin/signalements">Voir les signalements</Link><Link className="button button-secondary admin-primary-action" href="/admin/spots">Maintenir le catalogue</Link></div>
+        <div className="admin-action-row"><Link className="button admin-primary-action" href="/admin/propositions">Traiter les propositions</Link><Link className="button button-secondary admin-primary-action" href="/admin/signalements">Voir les signalements</Link><Link className="button button-secondary admin-primary-action" href="/admin/retraits">Traiter les retraits</Link><Link className="button button-secondary admin-primary-action" href="/admin/spots">Maintenir le catalogue</Link></div>
       </section>
     </main>
   );

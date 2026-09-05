@@ -6,7 +6,9 @@
     "node": ">=22.13.0"
   },
   "scripts": {
+    "predev": "node ./scripts/copy-maplibre-worker.mjs",
     "dev": "next dev",
+    "prebuild": "node ./scripts/copy-maplibre-worker.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
@@ -20,6 +22,7 @@
     "db:types": "supabase gen types typescript --local --schema public > src/lib/supabase/database.types.ts"
   },
   "dependencies": {
+    "@sentry/nextjs": "10.73.0",
     "@supabase/ssr": "0.12.5",
     "@supabase/supabase-js": "2.114.0",
     "lucide-react": "1.40.0",

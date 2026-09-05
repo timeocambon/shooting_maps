@@ -99,5 +99,10 @@ seront ajoutées au lot qualité, avant la bêta.
 
 Le framework, la carte, Supabase local, PostGIS, les migrations, le stockage,
 l'authentification renforcée, la contribution avec photos et la file de
-modération sont opérationnels. Les comptes hébergés et services payants ne
-seront créés qu'au moment de préparer la préproduction.
+modération sont opérationnels. L'envoi d'e-mail transactionnel réel (Brevo),
+le suivi d'erreurs (Sentry, avec filtrage des données sensibles) et la mesure
+d'audience (Plausible) sont câblés côté code et s'activent automatiquement
+dès que les variables d'environnement correspondantes sont renseignées — voir
+`docs/mise-en-production.md` pour la partie comptes et infrastructure
+(Vercel, Supabase de production et ses sauvegardes, domaines Brevo/Sentry/
+Plausible) qui reste à faire manuellement.

@@ -6,6 +6,9 @@
 /out/
 /build/
 
+# Copié depuis node_modules par scripts/copy-maplibre-worker.mjs (predev/prebuild)
+/public/maplibre/
+
 # Tests
 /coverage/
 /playwright-report/

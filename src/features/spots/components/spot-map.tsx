@@ -11,9 +11,11 @@ import {
   DEFAULT_MAP_ZOOM,
   resolveMapStyle,
 } from "@/features/maps/map-style";
+import { ensureMaplibreWorkerConfigured } from "@/features/maps/maplibre-worker";
 import type { PublicSpot } from "@/features/spots/domain/spot";
 
-type Viewport = { center: [number, number]; zoom: number };
+type MapBounds = { west: number; south: number; east: number; north: number };
+type Viewport = { center: [number, number]; zoom: number; bounds: MapBounds };
 
 type SpotMapProps = {
   spots: PublicSpot[];
@@ -24,10 +26,12 @@ type SpotMapProps = {
   initialCenter?: [number, number];
   /** Zoom initial (ex. restauré depuis l'URL partagée) ; sinon le zoom par défaut. */
   initialZoom?: number;
-  /** Appelé après chaque déplacement stabilisé, pour synchroniser la zone dans l'URL. */
+  /**
+   * Appelé après chaque déplacement stabilisé (et une fois au chargement),
+   * pour synchroniser la zone dans l'URL et permettre au parent de filtrer
+   * sa liste sur les spots actuellement visibles (bounds).
+   */
   onViewportChange?: (viewport: Viewport) => void;
-  /** Position du visiteur, seulement après une action explicite de sa part. */
-  userLocation?: { latitude: number; longitude: number } | null;
 };
 
 type MarkerCluster = {
@@ -81,13 +85,10 @@ export function SpotMap({
   initialCenter,
   initialZoom,
   onViewportChange,
-  userLocation,
 }: SpotMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<MapLibreMarker[]>([]);
-  const userMarkerRef = useRef<MapLibreMarker | null>(null);
-  const flownToUserLocationRef = useRef(false);
   const syncMarkersRef = useRef<
     ((nextSpots: PublicSpot[], nextSelectedSpotId: string | null) => void) | null
   >(null);
@@ -121,6 +122,8 @@ export function SpotMap({
 
     void import("maplibre-gl").then((maplibregl) => {
       if (cancelled || !containerRef.current) return;
+
+      ensureMaplibreWorkerConfigured(maplibregl.setWorkerUrl);
 
       const map = new maplibregl.Map({
         container: containerRef.current,
@@ -218,9 +221,16 @@ export function SpotMap({
 
       const reportViewport = () => {
         const center = map.getCenter();
+        const bounds = map.getBounds();
         onViewportChangeRef.current?.({
           center: [center.lng, center.lat],
           zoom: map.getZoom(),
+          bounds: {
+            west: bounds.getWest(),
+            south: bounds.getSouth(),
+            east: bounds.getEast(),
+            north: bounds.getNorth(),
+          },
         });
       };
 
@@ -228,6 +238,11 @@ export function SpotMap({
       map.on("moveend", reportViewport);
       // Les écouteurs sont détruits avec la carte dans le nettoyage de
       // l'effet (map.remove() ci-dessous) ; pas besoin de les retirer ici.
+      // Rapporte aussi la zone initiale : sans déplacement, "moveend" ne se
+      // déclenche jamais tout seul, et le panneau de résultats (qui filtre
+      // sur la zone visible) resterait vide tant que personne n'a bougé la
+      // carte.
+      map.once("load", reportViewport);
     });
 
     return () => {
@@ -236,8 +251,6 @@ export function SpotMap({
       syncMarkersRef.current = null;
       markers.forEach((marker) => marker.remove());
       markers.length = 0;
-      userMarkerRef.current?.remove();
-      userMarkerRef.current = null;
       mapRef.current?.remove();
       mapRef.current = null;
     };
@@ -252,7 +265,13 @@ export function SpotMap({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !selectedSpotId) return;
-    const spot = spots.find((item) => item.id === selectedSpotId);
+    // On lit spotsRef plutôt que `spots` en dépendance : `spots` change de
+    // référence à chaque déplacement de la carte (l'URL se met à jour, le
+    // parent re-rend, le tableau filtré est recréé) sans que la sélection
+    // change réellement. Dépendre de `spots` ici recentrait la carte sur le
+    // spot sélectionné à chaque geste de pan/zoom, empêchant de déplacer
+    // librement la carte une fois un spot sélectionné.
+    const spot = spotsRef.current.find((item) => item.id === selectedSpotId);
     if (!spot) return;
 
     map.flyTo({
@@ -260,52 +279,7 @@ export function SpotMap({
       zoom: Math.max(map.getZoom(), 11),
       essential: true,
     });
-  }, [selectedSpotId, spots]);
-
-  // Marqueur de position du visiteur : ajouté seulement s'il a explicitement
-  // demandé sa géolocalisation, jamais au chargement de la page.
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-
-    let cancelled = false;
-
-    void import("maplibre-gl").then((maplibregl) => {
-      if (cancelled) return;
-
-      userMarkerRef.current?.remove();
-      userMarkerRef.current = null;
-
-      if (!userLocation) {
-        flownToUserLocationRef.current = false;
-        return;
-      }
-
-      const element = document.createElement("span");
-      element.className = "map-user-marker";
-      element.setAttribute("aria-hidden", "true");
-
-      userMarkerRef.current = new maplibregl.Marker({
-        element,
-        anchor: "center",
-      })
-        .setLngLat([userLocation.longitude, userLocation.latitude])
-        .addTo(map);
-
-      if (!flownToUserLocationRef.current) {
-        flownToUserLocationRef.current = true;
-        map.flyTo({
-          center: [userLocation.longitude, userLocation.latitude],
-          zoom: Math.max(map.getZoom(), 12),
-          essential: true,
-        });
-      }
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [userLocation]);
+  }, [selectedSpotId]);
 
   function recenter() {
     mapRef.current?.flyTo({

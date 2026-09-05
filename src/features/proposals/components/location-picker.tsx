@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import type { Map as MapLibreMap, Marker } from "maplibre-gl";
 import { resolveMapStyle } from "@/features/maps/map-style";
+import { ensureMaplibreWorkerConfigured } from "@/features/maps/maplibre-worker";
 
 type LocationPickerProps = {
   latitude: number;
@@ -28,6 +29,7 @@ export function LocationPicker({ latitude, longitude, onChange, styleUrl }: Loca
 
     void import("maplibre-gl").then((maplibregl) => {
       if (cancelled || !containerRef.current) return;
+      ensureMaplibreWorkerConfigured(maplibregl.setWorkerUrl);
       const initial = initialLocationRef.current;
       const map = new maplibregl.Map({
         container: containerRef.current,
