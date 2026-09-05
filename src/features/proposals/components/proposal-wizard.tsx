@@ -21,6 +21,7 @@ import {
   spotCategories,
   type SpotCategory,
 } from "@/features/spots/domain/spot";
+import { createSupabasePublicBrowserClient } from "@/lib/supabase/public-browser";
 
 const DRAFT_KEY = "spotride:proposal-draft:v1";
 const DRAFT_TTL = 7 * 24 * 60 * 60 * 1000;
@@ -98,6 +99,22 @@ type ApiResponse = {
   developmentConfirmationUrl?: string | null;
 };
 
+type CreateProposalResponse = {
+  ok: boolean;
+  message?: string;
+  proposalId?: string;
+  trackingId?: string;
+  uploadSecret?: string;
+  emailToken?: string;
+};
+
+type SignPhotoResponse = {
+  ok: boolean;
+  message?: string;
+  path?: string;
+  token?: string;
+};
+
 type GeocodingResult = {
   label: string;
   municipality: string;
@@ -144,6 +161,7 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
   const [checkingPhotos, setCheckingPhotos] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [submitStage, setSubmitStage] = useState("");
   const [hydrated, setHydrated] = useState(false);
   const [website, setWebsite] = useState("");
   const [geocoding, setGeocoding] = useState(false);
@@ -394,36 +412,107 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
     setErrors(nextErrors);
     if (nextErrors.length || submitting) return;
     setSubmitting(true);
+    setSubmitStage("Création de la proposition…");
 
-    const formData = new FormData();
-    formData.set("payload", JSON.stringify({
-      address: draft.address,
-      latitude: Number(draft.latitude), longitude: Number(draft.longitude),
-      municipality: draft.municipality, postalCode: draft.postalCode,
-      displayPrecision: draft.displayPrecision, accessWithoutTrespass: draft.accessWithoutTrespass,
-      name: draft.name, categories: draft.categories, shortDescription: draft.shortDescription,
-      bestTimes: draft.bestTimes, visualFeatures: draft.visualFeatures,
-      accessLevel: draft.accessLevel, parking: draft.parking, walkingApproach: draft.walkingApproach,
-      surfaceType: draft.surfaceType, traffic: draft.traffic, attendance: draft.attendance,
-      risks: draft.risks, locationStatus: draft.locationStatus,
-    }));
-    formData.set("email", draft.email);
-    formData.set("pseudonym", draft.pseudonym);
-    formData.set("photoCredit", draft.photoCredit);
-    formData.set("rightsDeclared", String(draft.rightsDeclared));
-    formData.set("peopleConfirmed", String(draft.peopleConfirmed));
-    formData.set("charterAccepted", String(draft.charterAccepted));
-    formData.set("termsAccepted", String(draft.termsAccepted));
-    formData.set("privacyAccepted", String(draft.privacyAccepted));
-    formData.set("website", website);
-    photos.forEach((photo) => formData.append("photos", photo));
+    let proposalId: string | undefined;
+    let uploadSecret: string | undefined;
 
     try {
-      const response = await fetch("/api/propositions", { method: "POST", body: formData });
-      const result = (await response.json()) as ApiResponse;
-      if (!response.ok || !result.ok || !result.trackingId) {
+      // 1/3 — crée la proposition (texte uniquement). Les photos ne passent
+      // jamais par cette requête : elles sont envoyées directement à Supabase
+      // Storage ci-dessous, pour ne pas dépasser la limite de 4,5 Mo des
+      // fonctions Vercel.
+      const createResponse = await fetch("/api/propositions", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          payload: {
+            address: draft.address,
+            latitude: Number(draft.latitude), longitude: Number(draft.longitude),
+            municipality: draft.municipality, postalCode: draft.postalCode,
+            displayPrecision: draft.displayPrecision, accessWithoutTrespass: draft.accessWithoutTrespass,
+            name: draft.name, categories: draft.categories, shortDescription: draft.shortDescription,
+            bestTimes: draft.bestTimes, visualFeatures: draft.visualFeatures,
+            accessLevel: draft.accessLevel, parking: draft.parking, walkingApproach: draft.walkingApproach,
+            surfaceType: draft.surfaceType, traffic: draft.traffic, attendance: draft.attendance,
+            risks: draft.risks, locationStatus: draft.locationStatus,
+          },
+          email: draft.email,
+          pseudonym: draft.pseudonym,
+          photoCredit: draft.photoCredit,
+          rightsDeclared: draft.rightsDeclared,
+          peopleConfirmed: draft.peopleConfirmed,
+          charterAccepted: draft.charterAccepted,
+          termsAccepted: draft.termsAccepted,
+          privacyAccepted: draft.privacyAccepted,
+          website,
+        }),
+      });
+      const created = (await createResponse.json()) as CreateProposalResponse;
+      if (
+        !createResponse.ok ||
+        !created.ok ||
+        !created.proposalId ||
+        !created.uploadSecret ||
+        !created.trackingId ||
+        !created.emailToken
+      ) {
+        setErrors([created.message ?? "La proposition n'a pas pu être envoyée."]);
+        setSubmitting(false);
+        setSubmitStage("");
+        return;
+      }
+
+      proposalId = created.proposalId;
+      uploadSecret = created.uploadSecret;
+      const { trackingId, emailToken } = created;
+
+      // 2/3 — envoie chaque photo directement à Supabase Storage via une URL
+      // signée (le fichier ne transite pas par une fonction Vercel).
+      const supabase = createSupabasePublicBrowserClient();
+      const uploadedPhotos: Array<{ path: string; index: number }> = [];
+
+      for (const [index, photo] of photos.entries()) {
+        setSubmitStage(`Envoi de la photo ${index + 1}/${photos.length}…`);
+
+        const signResponse = await fetch("/api/propositions/photos", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ proposalId, uploadSecret, index }),
+        });
+        const signed = (await signResponse.json()) as SignPhotoResponse;
+        if (!signResponse.ok || !signed.ok || !signed.path || !signed.token) {
+          throw new Error(signed.message ?? "upload_failed");
+        }
+
+        const { error: uploadError } = await supabase.storage
+          .from("spot-originals")
+          .uploadToSignedUrl(signed.path, signed.token, photo);
+        if (uploadError) throw new Error("upload_failed");
+
+        uploadedPhotos.push({ path: signed.path, index });
+      }
+
+      // 3/3 — traite les photos côté serveur (comme avant) et finalise.
+      setSubmitStage("Finalisation…");
+      const finalizeResponse = await fetch("/api/propositions/finalize", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          proposalId,
+          uploadSecret,
+          emailToken,
+          trackingId,
+          email: draft.email,
+          photoCredit: draft.photoCredit,
+          photos: uploadedPhotos,
+        }),
+      });
+      const result = (await finalizeResponse.json()) as ApiResponse;
+      if (!finalizeResponse.ok || !result.ok || !result.trackingId) {
         setErrors([result.message ?? "La proposition n'a pas pu être envoyée."]);
         setSubmitting(false);
+        setSubmitStage("");
         return;
       }
 
@@ -436,8 +525,21 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
       }
       router.push(`/proposition-confirmee?${params.toString()}`);
     } catch {
+      if (proposalId && uploadSecret) {
+        try {
+          const supabase = createSupabasePublicBrowserClient();
+          await supabase.rpc("abandon_public_proposal", {
+            p_proposal_id: proposalId,
+            p_upload_secret: uploadSecret,
+          });
+        } catch {
+          // Best-effort cleanup only ; la proposition sera de toute façon
+          // ignorée par la modération tant qu'elle n'est pas confirmée.
+        }
+      }
       setErrors(["La connexion a été interrompue. Votre brouillon est conservé."]);
       setSubmitting(false);
+      setSubmitStage("");
     }
   }
 
@@ -598,7 +700,7 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
           {errors.length ? <div className="wizard-errors" role="alert"><strong>Vérifiez cette étape :</strong><ul>{errors.map((error) => <li key={error}>{error}</li>)}</ul></div> : null}
           <div className="wizard-actions">
             {step > 0 ? <button className="button button-secondary" type="button" onClick={() => { setErrors([]); setStep((current) => current - 1); }}><ArrowLeft size={17} /> Précédent</button> : <span />}
-            {step < 4 ? <button className="button" type="button" onClick={continueToNextStep}>Continuer <ArrowRight size={17} /></button> : <button className="button" type="button" disabled={submitting} onClick={submitProposal}>{submitting ? <><LoaderCircle className="spin" size={17} /> Envoi sécurisé…</> : "Envoyer et confirmer mon e-mail"}</button>}
+            {step < 4 ? <button className="button" type="button" onClick={continueToNextStep}>Continuer <ArrowRight size={17} /></button> : <button className="button" type="button" disabled={submitting} onClick={submitProposal}>{submitting ? <><LoaderCircle className="spin" size={17} /> {submitStage || "Envoi sécurisé…"}</> : "Envoyer et confirmer mon e-mail"}</button>}
           </div>
         </div>
 
