@@ -4,6 +4,7 @@ import { z } from "zod";
 import { sendProposalConfirmationEmail } from "@/features/proposals/server/confirmation-email";
 import { processProposalImage } from "@/features/proposals/server/image-processing";
 import { isSupabaseConfigured } from "@/lib/env";
+import { createSupabasePublicServerClient } from "@/lib/supabase/public-server";
 import { createSupabaseServiceRoleClient, isServiceRoleConfigured } from "@/lib/supabase/service-role-server";
 
 export const runtime = "nodejs";
@@ -31,10 +32,16 @@ function errorResponse(message: string, status = 400) {
 }
 
 // Étape 3/3 : une fois toutes les photos envoyées vers des chemins temporaires
-// (voir /photos), cette fonction utilise la clé de service (qui contourne les
-// policies RLS) pour les récupérer, les traiter avec sharp comme avant, les
-// déposer à leur emplacement définitif, puis finaliser la proposition et
-// envoyer l'e-mail de confirmation.
+// (voir /photos), cette fonction récupère chaque fichier, le traite avec sharp
+// comme avant, le dépose à son emplacement définitif, puis finalise la
+// proposition et envoie l'e-mail de confirmation.
+//
+// La clé de service (qui contourne les policies RLS) n'est utilisée QUE pour
+// télécharger la photo temporaire : c'est la seule opération qui n'a pas de
+// policy RLS anonyme (la lecture du bucket "spot-originals" n'est pas
+// publique). Tout le reste (upload, RPC, suppression) repasse par le client
+// public/anon habituel, qui est déjà autorisé pour ces opérations par les
+// policies existantes — comme le faisait le code d'origine.
 export async function POST(request: Request) {
   if (!isSupabaseConfigured() || !isServiceRoleConfigured()) {
     return errorResponse("Le service de contribution n'est pas encore configuré.", 503);
@@ -55,13 +62,14 @@ export async function POST(request: Request) {
   const { proposalId, uploadSecret, emailToken, trackingId, email, photoCredit, photos } =
     parsed.data;
 
-  const supabase = createSupabaseServiceRoleClient();
+  const supabase = createSupabasePublicServerClient();
+  const serviceSupabase = createSupabaseServiceRoleClient();
   const tempPaths = photos.map((photo) => photo.path);
   const finalPaths: string[] = [];
 
   try {
     for (const photo of photos) {
-      const { data: downloaded, error: downloadError } = await supabase.storage
+      const { data: downloaded, error: downloadError } = await serviceSupabase.storage
         .from("spot-originals")
         .download(photo.path);
       if (downloadError || !downloaded) {
@@ -72,16 +80,9 @@ export async function POST(request: Request) {
         throw new Error("upload_failed");
       }
 
-      const arrayBuffer = await downloaded.arrayBuffer();
-      console.error("[api/propositions/finalize] downloaded", {
-        path: photo.path,
-        byteLength: arrayBuffer.byteLength,
-        blobType: downloaded.type,
-      });
-
       let image;
       try {
-        image = await processProposalImage(Buffer.from(arrayBuffer));
+        image = await processProposalImage(Buffer.from(await downloaded.arrayBuffer()));
       } catch (processError) {
         console.error("[api/propositions/finalize] process_failed", {
           path: photo.path,
