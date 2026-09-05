@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, EyeOff, Expand, ImageOff, RotateCcw, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Expand, ImageOff, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type ReviewPhoto = {
@@ -12,21 +12,14 @@ type ReviewPhoto = {
   height: number | null;
   byteSize: number | null;
   signedUrl: string;
-  moderationState: "pending" | "approved" | "hidden" | "rejected";
 };
 
 type ReviewPhotoGalleryProps = {
   photos: ReviewPhoto[];
   spotName: string;
-  /**
-   * Action liée à la proposition (proposalId déjà bindé) qui bascule l'état
-   * d'une photo. Absente = galerie en lecture seule (proposition déjà
-   * décidée, ou composant réutilisé ailleurs sans modération).
-   */
-  moderateAction?: (formData: FormData) => void | Promise<void>;
 };
 
-export function ReviewPhotoGallery({ photos, spotName, moderateAction }: ReviewPhotoGalleryProps) {
+export function ReviewPhotoGallery({ photos, spotName }: ReviewPhotoGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const selectedPhoto = photos[selectedIndex];
@@ -63,37 +56,15 @@ export function ReviewPhotoGallery({ photos, spotName, moderateAction }: ReviewP
   const details = `${selectedPhoto.width ?? "?"} × ${selectedPhoto.height ?? "?"} px · ${
     selectedPhoto.byteSize ? (selectedPhoto.byteSize / 1024 / 1024).toFixed(1) : "?"
   } Mo${selectedPhoto.credit ? ` · Crédit : ${selectedPhoto.credit}` : ""}`;
-  const isRejected = selectedPhoto.moderationState === "rejected";
 
   return (
     <section className="review-gallery" aria-label="Photos privées de la proposition">
       <div className="review-gallery-heading">
-        <div>
-          <span>Contrôle des images</span>
-          <strong>Photo {selectedIndex + 1} sur {photos.length}</strong>
-        </div>
+        <div><span>Contrôle des images</span><strong>Photo {selectedIndex + 1} sur {photos.length}</strong></div>
         <button type="button" onClick={() => setExpanded(true)} disabled={!selectedPhoto.signedUrl}><Expand size={16} /> Agrandir</button>
       </div>
 
-      {moderateAction ? (
-        <div className="review-photo-moderation">
-          {isRejected ? <span className="review-photo-flag">Exclue de la publication</span> : null}
-          <form action={moderateAction}>
-            <input type="hidden" name="photoId" value={selectedPhoto.id} />
-            {isRejected ? (
-              <button type="submit" name="etat" value="pending">
-                <RotateCcw size={14} aria-hidden="true" /> Réintégrer cette photo
-              </button>
-            ) : (
-              <button type="submit" name="etat" value="rejected" className="reject">
-                <EyeOff size={14} aria-hidden="true" /> Exclure cette photo
-              </button>
-            )}
-          </form>
-        </div>
-      ) : null}
-
-      <figure className={`review-gallery-main${isRejected ? " is-rejected" : ""}`}>
+      <figure className="review-gallery-main">
         {selectedPhoto.signedUrl ? (
           <Image
             unoptimized
@@ -117,13 +88,10 @@ export function ReviewPhotoGallery({ photos, spotName, moderateAction }: ReviewP
           {photos.map((photo, index) => (
             <button
               key={photo.id}
-              className={[
-                index === selectedIndex ? "selected" : "",
-                photo.moderationState === "rejected" ? "rejected" : "",
-              ].join(" ").trim()}
+              className={index === selectedIndex ? "selected" : ""}
               type="button"
               onClick={() => setSelectedIndex(index)}
-              aria-label={`Afficher la photo ${index + 1}${photo.moderationState === "rejected" ? " (exclue)" : ""}`}
+              aria-label={`Afficher la photo ${index + 1}`}
               aria-pressed={index === selectedIndex}
             >
               {photo.signedUrl ? <Image unoptimized src={photo.signedUrl} width={180} height={120} alt="" /> : <ImageOff />}

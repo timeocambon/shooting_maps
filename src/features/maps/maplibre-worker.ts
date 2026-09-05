@@ -10,7 +10,7 @@ let configured = false;
  * seule fois, juste après `await import("maplibre-gl")` et avant de créer
  * la première `Map`.
  */
-export function ensureMaplibreWorkerConfigured(setWorkerUrl: SetWorkerUrl) {
+export function ensureMaplibreWorkerConfigured(setWorkerUrl: typeof SetWorkerUrl) {
   if (configured) return;
   setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
   configured = true;

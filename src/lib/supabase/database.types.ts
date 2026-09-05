@@ -490,32 +490,6 @@ export type Database = {
         Args: { p_next_state: string; p_note: string; p_spot_id: string }
         Returns: string
       }
-      admin_correct_proposal: {
-        Args: {
-          p_access_level: string
-          p_address: string
-          p_attendance: string
-          p_best_times: string[]
-          p_categories: string[]
-          p_internal_note?: string
-          p_latitude: number
-          p_location_status: string
-          p_longitude: number
-          p_municipality: string
-          p_name: string
-          p_parking: string
-          p_payload_display_precision: string
-          p_postal_code: string
-          p_proposal_id: string
-          p_risks: string
-          p_short_description: string
-          p_surface_type: string
-          p_traffic: string
-          p_visual_features: string
-          p_walking_approach: string
-        }
-        Returns: string
-      }
       admin_create_spot: {
         Args: {
           p_access_level: string
@@ -610,10 +584,6 @@ export type Database = {
           p_next_state: string
           p_report_id: string
         }
-        Returns: string
-      }
-      admin_set_proposal_photo_state: {
-        Args: { p_moderation_state: string; p_photo_id: string }
         Returns: string
       }
       admin_set_spot_address: {
@@ -950,4 +920,3 @@ export const Constants = {
     },
   },
 } as const
-
