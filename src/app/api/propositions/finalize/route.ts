@@ -65,10 +65,31 @@ export async function POST(request: Request) {
         .from("spot-originals")
         .download(photo.path);
       if (downloadError || !downloaded) {
+        console.error("[api/propositions/finalize] download_failed", {
+          path: photo.path,
+          error: downloadError,
+        });
         throw new Error("upload_failed");
       }
 
-      const image = await processProposalImage(Buffer.from(await downloaded.arrayBuffer()));
+      const arrayBuffer = await downloaded.arrayBuffer();
+      console.error("[api/propositions/finalize] downloaded", {
+        path: photo.path,
+        byteLength: arrayBuffer.byteLength,
+        blobType: downloaded.type,
+      });
+
+      let image;
+      try {
+        image = await processProposalImage(Buffer.from(arrayBuffer));
+      } catch (processError) {
+        console.error("[api/propositions/finalize] process_failed", {
+          path: photo.path,
+          error: processError instanceof Error ? processError.message : processError,
+        });
+        throw processError;
+      }
+
       const fileId = randomUUID();
       const basePath = `proposals/${proposalId}/${uploadSecret}`;
       const originalPath = `${basePath}/original-${photo.index}-${fileId}.${image.originalExtension}`;
@@ -81,7 +102,10 @@ export async function POST(request: Request) {
           cacheControl: "0",
           upsert: false,
         });
-      if (originalError) throw originalError;
+      if (originalError) {
+        console.error("[api/propositions/finalize] upload_original_failed", originalError);
+        throw originalError;
+      }
       finalPaths.push(originalPath);
 
       const { error: processedError } = await supabase.storage
@@ -91,7 +115,10 @@ export async function POST(request: Request) {
           cacheControl: "0",
           upsert: false,
         });
-      if (processedError) throw processedError;
+      if (processedError) {
+        console.error("[api/propositions/finalize] upload_processed_failed", processedError);
+        throw processedError;
+      }
       finalPaths.push(processedPath);
 
       const { error: photoError } = await supabase.rpc("attach_proposal_photo", {
@@ -106,9 +133,15 @@ export async function POST(request: Request) {
         p_width: image.width,
         p_height: image.height,
       });
-      if (photoError) throw photoError;
+      if (photoError) {
+        console.error("[api/propositions/finalize] attach_failed", photoError);
+        throw photoError;
+      }
     }
   } catch (error) {
+    console.error("[api/propositions/finalize] failed", {
+      message: error instanceof Error ? error.message : error,
+    });
     if (finalPaths.length) {
       await supabase.storage.from("spot-originals").remove(finalPaths);
     }
