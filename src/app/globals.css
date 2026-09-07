@@ -13,10 +13,12 @@
 
 * { box-sizing: border-box; }
 
-html { background: var(--paper); scroll-behavior: smooth; }
+html { background: var(--paper); scroll-behavior: smooth; overflow-x: hidden; }
 
 body {
   margin: 0;
+  overflow-x: hidden;
+  max-width: 100vw;
   color: var(--ink);
   background:
     radial-gradient(circle at 12% -20%, rgba(232, 91, 61, 0.12), transparent 35rem),
