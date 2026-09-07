@@ -649,7 +649,7 @@ export type Database = {
       admin_review_withdrawal_request: {
         Args: {
           p_decision: string
-          p_hide_photo_id?: string
+          p_hide_photo_id?: string | null
           p_hide_spot?: boolean
           p_internal_note: string
           p_next_state: string
@@ -744,8 +744,8 @@ export type Database = {
           p_description: string
           p_email: string
           p_kind: string
-          p_spot_slug: string
-          p_tracking_id: string
+          p_spot_slug: string | null
+          p_tracking_id: string | null
           p_website?: string
         }
         Returns: string
