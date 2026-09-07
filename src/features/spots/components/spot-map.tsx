@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   Map as MapLibreMap,
   Marker as MapLibreMarker,
@@ -84,6 +84,7 @@ export function SpotMap({
   onViewportChange,
   userLocation,
 }: SpotMapProps) {
+  const [mapReady, setMapReady] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<MapLibreMarker[]>([]);
@@ -136,6 +137,7 @@ export function SpotMap({
       });
 
       mapRef.current = map;
+      setMapReady(true);
       map.addControl(
         new maplibregl.NavigationControl({ showCompass: false }),
         "top-right",
@@ -308,7 +310,9 @@ export function SpotMap({
     return () => {
       cancelled = true;
     };
-  }, [userLocation]);
+    // La carte se crée de façon asynchrone : si la position arrive avant
+    // qu'elle soit prête, il faut réessayer dès que mapReady bascule à true.
+  }, [userLocation, mapReady]);
 
   function recenter() {
     mapRef.current?.flyTo({
