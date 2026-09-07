@@ -142,7 +142,7 @@ export function SpotMap({
       );
       map.addControl(
         new maplibregl.AttributionControl({ compact: true }),
-        "bottom-right",
+        "top-left",
       );
 
       const syncMarkers = (
