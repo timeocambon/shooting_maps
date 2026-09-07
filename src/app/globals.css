@@ -99,12 +99,7 @@ a { color: inherit; text-decoration: none; }
 .button-secondary:hover { color: var(--ink); background: var(--paper-strong); border-color: #c8beb2; }
 
 .hero {
-  min-height: 270px;
-  padding: 48px clamp(20px, 6vw, 88px) 42px;
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(260px, 0.65fr);
-  align-items: end;
-  gap: 48px;
+  padding: 26px clamp(20px, 6vw, 88px) 6px;
 }
 .kicker { margin: 0 0 13px; color: var(--accent-dark); font-size: 0.71rem; font-weight: 850; letter-spacing: 0.14em; text-transform: uppercase; }
 .hero h1, .detail-heading h1, .simple-page h1, .admin-gate h1, .admin-content h1, .contribution-heading h1, .confirmation-page h1, .review-heading h1 {
@@ -637,7 +632,6 @@ a { color: inherit; text-decoration: none; }
 .separated { margin-top: 22px; }
 
 @media (max-width: 900px) {
-  .hero { grid-template-columns: 1fr; gap: 28px; align-items: start; }
   .explorer { height: auto; max-height: none; min-height: 0; grid-template-columns: 1fr; overflow: visible; }
   .results-panel { max-height: none; border-right: 0; }
   .spot-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; overflow: visible; }
@@ -663,8 +657,6 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 620px) {
   .site-header { min-height: 68px; }
   .main-nav > a:first-child { display: none; }
-  .hero { min-height: 245px; padding-top: 34px; }
-  .hero h1 { font-size: clamp(3rem, 16vw, 4.8rem); }
   .demo-banner { align-items: start; flex-direction: column; gap: 3px; }
   .explorer { margin-inline: 8px; border-radius: 18px; }
   .map-shell { min-height: 52vh; }
