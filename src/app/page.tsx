@@ -14,17 +14,7 @@ export default async function HomePage() {
       <div className="home-shell">
         <SiteHeader />
         <section className="hero">
-          <div>
-            <p className="kicker">La carte photo des motards toulousains</p>
-            <h1>
-              Le bon décor.<br />
-              <em>Au bon moment.</em>
-            </h1>
-          </div>
-          <p className="hero-copy">
-            Repérez des lieux documentés, anticipez la lumière et vérifiez
-            l&apos;accès avant de prendre la route.
-          </p>
+          <p className="kicker">La carte photo des motards toulousains</p>
         </section>
 
         {usesDemoData ? (
