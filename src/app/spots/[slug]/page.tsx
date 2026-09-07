@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -15,6 +14,7 @@ import {
 } from "lucide-react";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { SpotGallery } from "@/features/spots/components/spot-gallery";
 import {
   getPublishedSpotBySlug,
   getPublishedSpots,
@@ -105,11 +105,7 @@ export default async function SpotPage({ params }: SpotPageProps) {
 
         <article className="spot-detail">
           {spot.photoUrls.length ? (
-            <section className={`detail-gallery${spot.photoUrls.length === 1 ? " single" : ""}`} aria-label={`Galerie de ${spot.name}`}>
-              {spot.photoUrls.map((url, index) => (
-                <Image key={url} unoptimized width={1600} height={1200} sizes={index === 0 ? "(max-width: 1180px) 100vw, 780px" : "(max-width: 620px) 100vw, 390px"} src={url} alt={`Vue ${index + 1} du spot ${spot.name}`} priority={index === 0} />
-              ))}
-            </section>
+            <SpotGallery photoUrls={spot.photoUrls} spotName={spot.name} />
           ) : (
             <div className="detail-visual" aria-label="Aucune photo publiée pour cette fiche">
               <span className="spot-visual-road" aria-hidden="true" />
