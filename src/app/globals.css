@@ -344,16 +344,20 @@ a { color: inherit; text-decoration: none; }
 .gallery-tile:hover .gallery-expand, .gallery-tile:focus-visible .gallery-expand { opacity: 1; }
 .gallery-more { inset: 0; background: rgba(20, 16, 12, 0.55); font-size: 1.4rem; font-weight: 700; }
 
-.lightbox { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; background: rgba(15, 12, 9, 0.92); padding: clamp(16px, 5vw, 56px); }
-.lightbox-inner { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
-.lightbox-image { max-width: 100%; max-height: 100%; border-radius: 12px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5); object-fit: contain; }
-.lightbox-close { position: absolute; top: -46px; right: 0; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.12); color: #fff; cursor: pointer; }
-.lightbox-close:hover { background: rgba(255, 255, 255, 0.22); }
-.lightbox-nav { position: absolute; top: 50%; translate: 0 -50%; display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.12); color: #fff; cursor: pointer; }
-.lightbox-nav:hover { background: rgba(255, 255, 255, 0.22); }
-.lightbox-nav.prev { left: -8px; }
-.lightbox-nav.next { right: -8px; }
-.lightbox-count { position: absolute; bottom: -40px; left: 50%; translate: -50% 0; color: rgba(255, 255, 255, 0.75); font-size: 0.82rem; font-weight: 600; }
+/* Préfixe "spot-lightbox" dédié pour ne jamais entrer en collision avec les
+   classes .lightbox-* déjà utilisées par la galerie de modération admin. */
+.spot-lightbox { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; background: rgba(15, 12, 9, 0.92); padding: clamp(16px, 5vw, 56px); }
+.spot-lightbox-inner { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+.spot-lightbox-image { max-width: 100%; max-height: 100%; border-radius: 12px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5); object-fit: contain; }
+/* Fixe (et non ancré à l'image) pour rester toujours atteignable à l'écran,
+   quels que soient la taille de la photo et les zones d'interface du navigateur mobile. */
+.spot-lightbox-close { position: fixed; z-index: 2; top: max(14px, env(safe-area-inset-top, 14px)); right: 14px; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.14); color: #fff; cursor: pointer; }
+.spot-lightbox-close:hover { background: rgba(255, 255, 255, 0.24); }
+.spot-lightbox-nav { position: absolute; top: 50%; translate: 0 -50%; display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.12); color: #fff; cursor: pointer; }
+.spot-lightbox-nav:hover { background: rgba(255, 255, 255, 0.22); }
+.spot-lightbox-nav.prev { left: -8px; }
+.spot-lightbox-nav.next { right: -8px; }
+.spot-lightbox-count { position: fixed; z-index: 2; bottom: max(14px, env(safe-area-inset-bottom, 14px)); left: 50%; translate: -50% 0; color: rgba(255, 255, 255, 0.75); font-size: 0.82rem; font-weight: 600; }
 .detail-heading { margin: 42px 0 26px; display: flex; align-items: end; justify-content: space-between; gap: 32px; }
 .detail-heading h1 { font-size: clamp(2.5rem, 5vw, 5rem); line-height: 0.98; }
 .detail-heading .spot-location { margin-top: 14px; font-size: 0.85rem; }
@@ -718,11 +722,11 @@ a { color: inherit; text-decoration: none; }
   .detail-gallery[data-count] { grid-template-columns: 1fr; grid-template-rows: none; border-radius: 17px; }
   .detail-gallery[data-count] .gallery-tile { grid-row: auto; aspect-ratio: 4 / 3; }
   .detail-gallery.single .gallery-tile { aspect-ratio: auto; }
-  .lightbox { padding: 20px; }
-  .lightbox-close { top: -44px; right: -4px; }
-  .lightbox-nav { width: 40px; height: 40px; }
-  .lightbox-nav.prev { left: -4px; }
-  .lightbox-nav.next { right: -4px; }
+  .spot-lightbox { padding: 20px; }
+  .spot-lightbox-close { width: 38px; height: 38px; }
+  .spot-lightbox-nav { width: 40px; height: 40px; }
+  .spot-lightbox-nav.prev { left: -4px; }
+  .spot-lightbox-nav.next { right: -4px; }
   .detail-actions { align-items: stretch; flex-direction: column; }
   .detail-actions .button { width: 100%; }
   .admin-content > header { align-items: start; flex-direction: column; }

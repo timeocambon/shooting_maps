@@ -89,20 +89,20 @@ export function SpotGallery({ photoUrls, spotName }: SpotGalleryProps) {
 
       {openIndex !== null ? (
         <div
-          className="lightbox"
+          className="spot-lightbox"
           role="dialog"
           aria-modal="true"
           aria-label={`Photo ${openIndex + 1} sur ${count} — ${spotName}`}
           onClick={close}
         >
-          <div className="lightbox-inner" onClick={(event) => event.stopPropagation()}>
-            <button type="button" className="lightbox-close" onClick={close} aria-label="Fermer la photo">
-              <X size={20} />
-            </button>
+          <button type="button" className="spot-lightbox-close" onClick={close} aria-label="Fermer la photo">
+            <X size={20} />
+          </button>
+          <div className="spot-lightbox-inner" onClick={(event) => event.stopPropagation()}>
             {count > 1 ? (
               <button
                 type="button"
-                className="lightbox-nav prev"
+                className="spot-lightbox-nav prev"
                 onClick={showPrev}
                 aria-label="Photo précédente"
               >
@@ -113,24 +113,24 @@ export function SpotGallery({ photoUrls, spotName }: SpotGalleryProps) {
             <img
               src={photoUrls[openIndex]}
               alt={`Vue ${openIndex + 1} du spot ${spotName}`}
-              className="lightbox-image"
+              className="spot-lightbox-image"
             />
             {count > 1 ? (
               <button
                 type="button"
-                className="lightbox-nav next"
+                className="spot-lightbox-nav next"
                 onClick={showNext}
                 aria-label="Photo suivante"
               >
                 <ChevronRight size={24} />
               </button>
             ) : null}
-            {count > 1 ? (
-              <p className="lightbox-count">
-                {openIndex + 1} / {count}
-              </p>
-            ) : null}
           </div>
+          {count > 1 ? (
+            <p className="spot-lightbox-count">
+              {openIndex + 1} / {count}
+            </p>
+          ) : null}
         </div>
       ) : null}
     </>
