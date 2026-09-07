@@ -69,7 +69,7 @@ export function MapExplorer({ spots, mapStyleUrl }: MapExplorerProps) {
 
   const [query, setQuery] = useState(initialState.q);
   const [category, setCategory] = useState<SpotCategory | "all">(initialState.category);
-  const [selectedSpotId, setSelectedSpotId] = useState<string | null>(spots[0]?.id ?? null);
+  const [selectedSpotId, setSelectedSpotId] = useState<string | null>(null);
   const [distanceLimitKm, setDistanceLimitKm] = useState<number | null>(
     initialState.distanceLimitKm,
   );
