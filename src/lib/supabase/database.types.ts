@@ -477,6 +477,62 @@ export type Database = {
         }
         Relationships: []
       }
+      withdrawal_requests: {
+        Row: {
+          created_at: string
+          decision: string | null
+          description: string
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          internal_note: string | null
+          kind: string
+          proposal_tracking_id: string | null
+          requester_email: string
+          spot_id: string | null
+          state: Database["public"]["Enums"]["report_state"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          decision?: string | null
+          description: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          internal_note?: string | null
+          kind: string
+          proposal_tracking_id?: string | null
+          requester_email: string
+          spot_id?: string | null
+          state?: Database["public"]["Enums"]["report_state"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          decision?: string | null
+          description?: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          internal_note?: string | null
+          kind?: string
+          proposal_tracking_id?: string | null
+          requester_email?: string
+          spot_id?: string | null
+          state?: Database["public"]["Enums"]["report_state"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "withdrawal_requests_spot_id_fkey"
+            columns: ["spot_id"]
+            isOneToOne: false
+            referencedRelation: "spots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -563,6 +619,10 @@ export type Database = {
           updated_at: string
         }[]
       }
+      admin_purge_expired_proposals: {
+        Args: never
+        Returns: Json
+      }
       admin_refresh_review_due_spots: { Args: never; Returns: number }
       admin_review_proposal: {
         Args: {
@@ -586,9 +646,24 @@ export type Database = {
         }
         Returns: string
       }
+      admin_review_withdrawal_request: {
+        Args: {
+          p_decision: string
+          p_hide_photo_id?: string
+          p_hide_spot?: boolean
+          p_internal_note: string
+          p_next_state: string
+          p_request_id: string
+        }
+        Returns: string
+      }
       admin_set_spot_address: {
         Args: { p_address: string; p_spot_id: string }
         Returns: boolean
+      }
+      admin_set_spot_photo_state: {
+        Args: { p_moderation_state: string; p_photo_id: string }
+        Returns: string
       }
       admin_update_spot: {
         Args: {
@@ -660,6 +735,17 @@ export type Database = {
           p_email?: string
           p_reason: string
           p_spot_id: string
+          p_website?: string
+        }
+        Returns: string
+      }
+      create_withdrawal_request: {
+        Args: {
+          p_description: string
+          p_email: string
+          p_kind: string
+          p_spot_slug: string
+          p_tracking_id: string
           p_website?: string
         }
         Returns: string
