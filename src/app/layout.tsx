@@ -5,20 +5,20 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 import { getPlausibleDomain } from "@/lib/env";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://127.0.0.1:3000";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://127.0.0.1:3000";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Spotride Toulouse — Trouvez votre prochain décor",
-    template: "%s · Spotride Toulouse",
+    default: "Spotride — Trouvez votre prochain décor",
+    template: "%s · Spotride",
   },
   description:
     "Des spots vérifiés autour de Toulouse pour préparer vos shootings photo moto.",
   openGraph: {
     type: "website",
     locale: "fr_FR",
-    title: "Spotride Toulouse — Trouvez votre prochain décor",
+    title: "Spotride — Trouvez votre prochain décor",
     description:
       "Des spots vérifiés autour de Toulouse pour préparer vos shootings photo moto.",
     images: [
@@ -26,13 +26,13 @@ export const metadata: Metadata = {
         url: "/og.png",
         width: 1731,
         height: 909,
-        alt: "Spotride Toulouse, une moto face aux collines au coucher du soleil",
+        alt: "Spotride, une moto face aux collines au coucher du soleil",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Spotride Toulouse — Trouvez votre prochain décor",
+    title: "Spotride — Trouvez votre prochain décor",
     description:
       "Des spots vérifiés autour de Toulouse pour préparer vos shootings photo moto.",
     images: ["/og.png"],

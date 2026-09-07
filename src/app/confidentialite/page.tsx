@@ -13,7 +13,7 @@ export default function PrivacyPage() {
         <article className="simple-page prose-page">
           <p className="kicker">Version de travail</p>
           <h1>Confidentialité et données personnelles</h1>
-          <p className="lead">Cette page décrit les pratiques réellement mises en œuvre par Spotride Toulouse à ce stade du développement. Sa formulation juridique devra être validée avant la bêta, mais son contenu reflète le fonctionnement effectif du service.</p>
+          <p className="lead">Cette page décrit les pratiques réellement mises en œuvre par Spotride à ce stade du développement. Sa formulation juridique devra être validée avant la bêta, mais son contenu reflète le fonctionnement effectif du service.</p>
 
           <h2>Quelles données sont collectées</h2>
           <ul>

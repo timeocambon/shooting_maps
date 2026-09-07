@@ -52,7 +52,7 @@ export async function sendProposalConfirmationEmail({
         subject: `Confirmez votre proposition ${trackingId}`,
         htmlContent: `
           <h1>Confirmez votre proposition</h1>
-          <p>Merci d'avoir partagé un spot avec Spotride Toulouse.</p>
+          <p>Merci d'avoir partagé un spot avec Spotride.</p>
           <p><a href="${confirmationUrl}">Confirmer mon adresse e-mail</a></p>
           <p>Votre numéro de suivi est <strong>${trackingId}</strong>. Ce lien expire dans 24 heures et ne peut être utilisé qu'une fois.</p>
           <p>Aucune proposition n'est publiée automatiquement.</p>
@@ -78,7 +78,7 @@ export async function sendProposalDecisionEmail(input: {
   const messages: Record<ProposalDecision, { subject: string; body: string }> = {
     approved: {
       subject: `Votre proposition ${input.trackingId} est publiée`,
-      body: "Votre contribution a été vérifiée et publiée sur Spotride Toulouse.",
+      body: "Votre contribution a été vérifiée et publiée sur Spotride.",
     },
     changes_requested: {
       subject: `Des précisions sont nécessaires pour ${input.trackingId}`,

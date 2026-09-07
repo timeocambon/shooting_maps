@@ -5,7 +5,7 @@ import { z } from "zod";
 const serverEnvSchema = z.object({
   BREVO_API_KEY: z.string().min(1).optional(),
   BREVO_SENDER_EMAIL: z.email().optional(),
-  BREVO_SENDER_NAME: z.string().min(1).max(120).default("Spotride Toulouse"),
+  BREVO_SENDER_NAME: z.string().min(1).max(120).default("Spotride"),
   NEXT_PUBLIC_SITE_URL: z.url().default("http://127.0.0.1:3000"),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
 });

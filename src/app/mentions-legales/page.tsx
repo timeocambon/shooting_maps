@@ -26,7 +26,7 @@ export default function LegalNoticePage() {
           </p>
 
           <h2>Propriété intellectuelle</h2>
-          <p>Les photographies publiées restent la propriété de leurs auteurs, qui déclarent en détenir les droits de diffusion au moment de leur envoi. Toute réutilisation en dehors de Spotride Toulouse doit obtenir l’accord préalable de l’auteur.</p>
+          <p>Les photographies publiées restent la propriété de leurs auteurs, qui déclarent en détenir les droits de diffusion au moment de leur envoi. Toute réutilisation en dehors de Spotride doit obtenir l’accord préalable de l’auteur.</p>
 
           <h2>Contact</h2>
           <p>Pour toute question relative à ces mentions, au contenu du site ou à vos données personnelles, utilisez la page <Link href="/demande-de-retrait">demande de retrait</Link>. Voir aussi la page <Link href="/confidentialite">confidentialité</Link> pour le détail des données traitées.</p>

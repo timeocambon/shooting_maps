@@ -4,13 +4,12 @@ import { MapPinned } from "lucide-react";
 export function SiteHeader() {
   return (
     <header className="site-header">
-      <Link className="brand" href="/" aria-label="Spotride Toulouse — accueil">
+      <Link className="brand" href="/" aria-label="Spotride — accueil">
         <span className="brand-mark" aria-hidden="true">
           <MapPinned size={20} strokeWidth={2.2} />
         </span>
         <span>
           <strong>Spotride</strong>
-          <small>Toulouse</small>
         </span>
       </Link>
 
