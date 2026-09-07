@@ -146,6 +146,12 @@ export function MapExplorer({ spots, mapStyleUrl }: MapExplorerProps) {
     );
   }
 
+  function clearLocation() {
+    setUserLocation(null);
+    setDistanceLimitKm(null);
+    setGeoStatus("idle");
+  }
+
   return (
     <section className="explorer" aria-label="Explorer les spots">
       <div className="results-panel">
@@ -200,8 +206,8 @@ export function MapExplorer({ spots, mapStyleUrl }: MapExplorerProps) {
               <LocateFixed size={17} aria-hidden="true" />
               Distance
             </span>
-            {distanceLimitKm ? (
-              <button type="button" onClick={() => setDistanceLimitKm(null)}>
+            {userLocation || distanceLimitKm ? (
+              <button type="button" onClick={clearLocation}>
                 Effacer
               </button>
             ) : null}
