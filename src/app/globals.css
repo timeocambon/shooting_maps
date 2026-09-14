@@ -184,9 +184,14 @@ a { color: inherit; text-decoration: none; }
   border-radius: 18px;
   overflow: hidden;
   background: white;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  scroll-margin-top: 14px;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
 }
-.spot-card-selected { border-color: rgba(232, 91, 61, 0.75); box-shadow: 0 8px 24px rgba(38, 31, 24, 0.09); }
+.spot-card-selected {
+  border-color: var(--accent);
+  background: #fff6f1;
+  box-shadow: 0 0 0 3px rgba(232, 91, 61, 0.22), 0 12px 28px rgba(38, 31, 24, 0.16);
+}
 .spot-card-select { width: 100%; padding: 0; border: 0; display: block; background: none; cursor: pointer; }
 .spot-visual, .detail-visual {
   position: relative;

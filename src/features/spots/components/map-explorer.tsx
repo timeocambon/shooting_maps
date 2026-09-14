@@ -122,7 +122,7 @@ export function MapExplorer({ spots, mapStyleUrl }: MapExplorerProps) {
     setSelectedSpotId(spot.id);
     document
       .querySelector(`[data-spot-id="${spot.id}"]`)
-      ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function requestLocation() {
