@@ -31,6 +31,9 @@ export async function reviewPhotographerAction(photographerId: string, formData:
   });
 
   if (error) {
+    // Tracé côté serveur : sans cela, une erreur SQL n'apparaît que sous la
+    // forme d'un message générique dans l'interface.
+    console.error("admin_review_photographer", error.message);
     const reason = error.message.includes("already_reviewed") ? "deja-traite" : "traitement";
     redirect(`/admin/photographes/${photographerId}?erreur=${reason}`);
   }

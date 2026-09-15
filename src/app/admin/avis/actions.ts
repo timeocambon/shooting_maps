@@ -29,7 +29,10 @@ export async function reviewPhotographerReviewAction(formData: FormData) {
     p_moderation_state: parsed.data.moderationState,
   });
 
-  if (error) redirect("/admin/avis?erreur=traitement");
+  if (error) {
+    console.error("admin_review_photographer_review", error.message);
+    redirect("/admin/avis?erreur=traitement");
+  }
 
   revalidatePath("/admin/avis");
   revalidatePath(`/photographes/${parsed.data.photographerSlug}`);
