@@ -34,14 +34,59 @@ export type ProposalReview = {
   }>;
 };
 
+/**
+ * Supprime les fichiers restants des propositions purgées, via l'API Storage :
+ * la suppression directe dans storage.objects est interdite par Supabase.
+ * Best-effort volontaire — un échec ici ne doit jamais bloquer l'administration.
+ */
+async function removePurgedProposalObjects(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  proposalIds: string[],
+) {
+  for (const proposalId of proposalIds.slice(0, 20)) {
+    const base = `proposals/${proposalId}`;
+    const { data: entries } = await supabase.storage.from("spot-originals").list(base, { limit: 100 });
+    if (!entries?.length) continue;
+
+    const paths: string[] = [];
+    for (const entry of entries) {
+      if (entry.id) {
+        paths.push(`${base}/${entry.name}`);
+        continue;
+      }
+      const { data: files } = await supabase.storage
+        .from("spot-originals")
+        .list(`${base}/${entry.name}`, { limit: 100 });
+      for (const file of files ?? []) paths.push(`${base}/${entry.name}/${file.name}`);
+    }
+
+    if (paths.length) await supabase.storage.from("spot-originals").remove(paths);
+  }
+}
+
 export async function getAdminDashboardCounts() {
   const supabase = await createSupabaseServerClient();
-  const [{ error: refreshError }, { error: purgeError }] = await Promise.all([
+
+  // Les tâches de maintenance sont accessoires : si l'une échoue, le tableau
+  // de bord doit rester consultable (une erreur ici rendait /admin inaccessible).
+  const [, purge] = await Promise.all([
     supabase.rpc("admin_refresh_review_due_spots"),
     supabase.rpc("admin_purge_expired_proposals"),
   ]);
-  if (refreshError) throw refreshError;
-  if (purgeError) throw purgeError;
+
+  const purgedIds =
+    purge.data && typeof purge.data === "object" && !Array.isArray(purge.data)
+      ? (purge.data as { expired_proposal_ids?: unknown }).expired_proposal_ids
+      : null;
+
+  if (Array.isArray(purgedIds) && purgedIds.length) {
+    try {
+      await removePurgedProposalObjects(supabase, purgedIds.filter((id): id is string => typeof id === "string"));
+    } catch {
+      // Nettoyage différé : les fichiers orphelins seront repris au prochain passage.
+    }
+  }
+
   const [proposals, reports, spots, withdrawals, photographers, reviews] = await Promise.all([
     supabase.from("proposals").select("id", { count: "exact", head: true }).eq("state", "submitted"),
     supabase.from("reports").select("id", { count: "exact", head: true }).eq("state", "open").eq("priority", "high"),
