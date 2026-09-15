@@ -10,7 +10,8 @@ export function AdminSidebar({ active }: AdminSidebarProps) {
   return (
     <aside className="admin-sidebar">
       <Link className="brand inverse" href="/">
-        <span className="brand-mark"><Image src="/brand/logo-mark.png" alt="" width={40} height={40} /></span>
+        {/* Version blanche : la barre d'administration est sur fond sombre. */}
+        <span className="brand-mark"><Image src="/brand/logo-mark-white.png" alt="" width={40} height={40} /></span>
         <span><strong>Spotride</strong><small>Administration</small></span>
       </Link>
       <nav aria-label="Administration">
