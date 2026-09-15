@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { SiteHeaderMenu } from "@/components/site-header-menu";
 
 export function SiteHeader() {
   return (
@@ -14,8 +15,7 @@ export function SiteHeader() {
       </Link>
 
       <nav className="main-nav" aria-label="Navigation principale">
-        <Link href="/a-propos">Le projet</Link>
-        <Link href="/photographes">Photographes</Link>
+        <SiteHeaderMenu />
         <Link className="button button-small" href="/proposer">
           Proposer un spot
         </Link>
