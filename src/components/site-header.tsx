@@ -6,7 +6,7 @@ export function SiteHeader() {
     <header className="site-header">
       <Link className="brand" href="/" aria-label="Spotride — accueil">
         <span className="brand-mark" aria-hidden="true">
-          <Image src="/brand/logo-mark.png" alt="" width={40} height={40} priority />
+          <Image src="/brand/logo-mark.png" alt="" width={56} height={56} priority />
         </span>
         <span>
           <strong>Spotride</strong>
