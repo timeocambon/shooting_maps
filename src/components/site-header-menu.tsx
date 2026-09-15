@@ -40,10 +40,11 @@ export function SiteHeaderMenu() {
         className="header-menu-button"
         aria-haspopup="true"
         aria-expanded={open}
+        aria-label="Menu"
         onClick={() => setOpen((current) => !current)}
       >
         <Menu size={17} aria-hidden="true" />
-        Menu
+        <span className="header-menu-label">Menu</span>
         <ChevronDown size={15} aria-hidden="true" className={open ? "flipped" : ""} />
       </button>
       {open ? (
