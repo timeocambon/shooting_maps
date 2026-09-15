@@ -61,15 +61,12 @@ a { color: inherit; text-decoration: none; }
 
 .brand { display: inline-flex; align-items: center; gap: 11px; letter-spacing: -0.02em; }
 .brand-mark {
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
-  border-radius: 13px;
-  color: white;
-  background: var(--accent);
-  transform: rotate(-3deg);
 }
+.brand-mark img { width: 100%; height: 100%; object-fit: contain; }
 .brand > span:last-child { display: grid; line-height: 1; }
 .brand strong { font-size: 1.08rem; }
 .brand small { margin-top: 4px; color: var(--muted); font-size: 0.67rem; letter-spacing: 0.13em; text-transform: uppercase; }

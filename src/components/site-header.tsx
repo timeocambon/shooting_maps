@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { MapPinned } from "lucide-react";
+import Image from "next/image";
 
 export function SiteHeader() {
   return (
     <header className="site-header">
       <Link className="brand" href="/" aria-label="Spotride — accueil">
         <span className="brand-mark" aria-hidden="true">
-          <MapPinned size={20} strokeWidth={2.2} />
+          <Image src="/brand/logo-mark.png" alt="" width={40} height={40} priority />
         </span>
         <span>
           <strong>Spotride</strong>
