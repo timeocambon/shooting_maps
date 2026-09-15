@@ -35,6 +35,9 @@ export async function reviewPhotographerReviewAction(formData: FormData) {
   }
 
   revalidatePath("/admin/avis");
-  revalidatePath(`/photographes/${parsed.data.photographerSlug}`);
+  revalidatePath("/admin");
+  // « layout » régénère aussi l'annuaire : la note moyenne et le nombre d'avis
+  // s'affichent sur les cartes de /photographes, pas seulement sur la fiche.
+  revalidatePath("/photographes", "layout");
   redirect(`/admin/avis?decision=${parsed.data.moderationState}`);
 }

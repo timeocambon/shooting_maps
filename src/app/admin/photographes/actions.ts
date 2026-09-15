@@ -39,7 +39,7 @@ export async function reviewPhotographerAction(photographerId: string, formData:
   }
 
   revalidatePath("/");
-  revalidatePath("/photographes");
+  revalidatePath("/photographes", "layout");
   revalidatePath("/admin");
   revalidatePath("/admin/photographes");
   redirect(`/admin/photographes?decision=${parsed.data.decision}`);
@@ -68,7 +68,7 @@ export async function setPhotographerPhotoStateAction(formData: FormData) {
     p_moderation_state: parsed.data.moderationState,
   });
 
-  revalidatePath("/photographes");
+  revalidatePath("/photographes", "layout");
   revalidatePath(`/admin/photographes/${parsed.data.photographerId}`);
 }
 
@@ -93,6 +93,6 @@ export async function setPhotographerStateAction(formData: FormData) {
     p_state: parsed.data.state,
   });
 
-  revalidatePath("/photographes");
+  revalidatePath("/photographes", "layout");
   revalidatePath(`/admin/photographes/${parsed.data.photographerId}`);
 }

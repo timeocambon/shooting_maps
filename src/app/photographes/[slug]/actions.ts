@@ -56,6 +56,7 @@ export async function createPhotographerReviewAction(
   });
 
   if (error) {
+    console.error("create_public_photographer_review", error.message);
     const mapped = errorMessages.find(([code]) => error.message.includes(code));
     return {
       status: "error",
