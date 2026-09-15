@@ -533,11 +533,204 @@ export type Database = {
           },
         ]
       }
+      photographer_photos: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          moderation_state: Database["public"]["Enums"]["photo_moderation_state"]
+          object_path: string
+          photographer_id: string
+          public_url: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          moderation_state?: Database["public"]["Enums"]["photo_moderation_state"]
+          object_path: string
+          photographer_id: string
+          public_url: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          moderation_state?: Database["public"]["Enums"]["photo_moderation_state"]
+          object_path?: string
+          photographer_id?: string
+          public_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photographer_photos_photographer_id_fkey"
+            columns: ["photographer_id"]
+            isOneToOne: false
+            referencedRelation: "photographers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      photographer_reviews: {
+        Row: {
+          comment: string
+          created_at: string
+          id: string
+          internal_note: string | null
+          moderation_state: Database["public"]["Enums"]["photo_moderation_state"]
+          photographer_id: string
+          rating: number
+          reviewer_email: string | null
+          reviewer_name: string | null
+        }
+        Insert: {
+          comment: string
+          created_at?: string
+          id?: string
+          internal_note?: string | null
+          moderation_state?: Database["public"]["Enums"]["photo_moderation_state"]
+          photographer_id: string
+          rating: number
+          reviewer_email?: string | null
+          reviewer_name?: string | null
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          id?: string
+          internal_note?: string | null
+          moderation_state?: Database["public"]["Enums"]["photo_moderation_state"]
+          photographer_id?: string
+          rating?: number
+          reviewer_email?: string | null
+          reviewer_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photographer_reviews_photographer_id_fkey"
+            columns: ["photographer_id"]
+            isOneToOne: false
+            referencedRelation: "photographers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      photographers: {
+        Row: {
+          bio: string
+          contact_email: string
+          created_at: string
+          decided_at: string | null
+          id: string
+          internal_note: string | null
+          location_label: string | null
+          name: string
+          publication_state: Database["public"]["Enums"]["photographer_state"]
+          slug: string
+          socials: Json
+          tagline: string
+          updated_at: string
+        }
+        Insert: {
+          bio: string
+          contact_email: string
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          internal_note?: string | null
+          location_label?: string | null
+          name: string
+          publication_state?: Database["public"]["Enums"]["photographer_state"]
+          slug: string
+          socials?: Json
+          tagline: string
+          updated_at?: string
+        }
+        Update: {
+          bio?: string
+          contact_email?: string
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          internal_note?: string | null
+          location_label?: string | null
+          name?: string
+          publication_state?: Database["public"]["Enums"]["photographer_state"]
+          slug?: string
+          socials?: Json
+          tagline?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      admin_review_photographer: {
+        Args: { p_decision: string; p_internal_note: string; p_photographer_id: string }
+        Returns: string
+      }
+      admin_review_photographer_review: {
+        Args: { p_internal_note?: string; p_moderation_state: string; p_review_id: string }
+        Returns: string
+      }
+      admin_set_photographer_photo_state: {
+        Args: { p_moderation_state: string; p_photo_id: string }
+        Returns: string
+      }
+      admin_set_photographer_state: {
+        Args: { p_photographer_id: string; p_state: string }
+        Returns: string
+      }
+      attach_photographer_photo: {
+        Args: { p_display_order: number; p_object_path: string; p_photographer_id: string; p_public_url: string }
+        Returns: string
+      }
+      create_public_photographer: {
+        Args: {
+          p_bio: string
+          p_email: string
+          p_location_label: string
+          p_name: string
+          p_socials: Json
+          p_tagline: string
+          p_website?: string
+        }
+        Returns: string
+      }
+      create_public_photographer_review: {
+        Args: {
+          p_comment: string
+          p_photographer_id: string
+          p_rating: number
+          p_reviewer_email: string
+          p_reviewer_name: string
+          p_website?: string
+        }
+        Returns: string
+      }
+      list_public_photographer_reviews: {
+        Args: { p_photographer_id: string }
+        Returns: { comment: string; created_at: string; id: string; rating: number; reviewer_name: string | null }[]
+      }
+      list_public_photographers: {
+        Args: never
+        Returns: {
+          average_rating: number | null
+          bio: string
+          cover_image_url: string | null
+          id: string
+          location_label: string | null
+          name: string
+          photo_urls: string[]
+          review_count: number
+          slug: string
+          socials: Json
+          tagline: string
+        }[]
+      }
       abandon_public_proposal: {
         Args: { p_proposal_id: string; p_upload_secret: string }
         Returns: boolean
@@ -809,6 +1002,7 @@ export type Database = {
         | "to_confirm"
         | "sensitive"
       photo_moderation_state: "pending" | "approved" | "hidden" | "rejected"
+      photographer_state: "pending" | "published" | "rejected" | "hidden"
       proposal_state:
         | "draft"
         | "email_pending"
@@ -974,6 +1168,7 @@ export const Constants = {
         "sensitive",
       ],
       photo_moderation_state: ["pending", "approved", "hidden", "rejected"],
+      photographer_state: ["pending", "published", "rejected", "hidden"],
       proposal_state: [
         "draft",
         "email_pending",

@@ -6,6 +6,7 @@ export function SiteFooter() {
       <p>Spotride · MVP en développement</p>
       <nav aria-label="Liens secondaires">
         <Link href="/a-propos">Le projet</Link>
+        <Link href="/photographes">Photographes</Link>
         <Link href="/charte">Charte</Link>
         <Link href="/confidentialite">Confidentialité</Link>
         <Link href="/mentions-legales">Mentions légales</Link>

@@ -763,7 +763,82 @@ a { color: inherit; text-decoration: none; }
   .report-reason-grid, .admin-choice-grid { grid-template-columns: 1fr; }
   .catalog-filters { grid-template-columns: 1fr; }
   .catalog-filters .button { width: 100%; }
+  .social-row { flex-wrap: wrap; }
+  .social-row select { flex: 1 1 100%; }
 }
+
+.photographer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+  margin: 24px 0 40px;
+}
+.photographer-card {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+  background: white;
+  display: flex;
+  flex-direction: column;
+}
+.photographer-visual { position: relative; height: 160px; background: linear-gradient(156deg, rgba(242, 188, 127, 0.5), transparent 60%), #d9d1c1; }
+.photographer-visual img { object-fit: cover; }
+.photographer-visual-placeholder { position: absolute; inset: 0; background: radial-gradient(circle at 73% 20%, rgba(255, 228, 174, 0.9), transparent 40%); }
+.photographer-card-body { padding: 16px 17px 15px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.photographer-card-body h2 { margin: 0; font-family: Georgia, serif; font-size: 1.18rem; font-weight: 500; }
+.photographer-card-footer { margin-top: auto; padding-top: 11px; border-top: 1px solid #eee9e2; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 0.75rem; }
+.photographer-card-footer a { display: inline-flex; align-items: center; gap: 4px; color: var(--accent-dark); font-weight: 800; }
+.photographer-rating { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); }
+.photographer-rating.muted { font-style: italic; }
+.photographer-rating svg { color: var(--line); }
+.photographer-rating svg.filled { color: #f2b34d; fill: #f2b34d; }
+
+.star-rating-input { display: inline-flex; gap: 4px; }
+.star-rating-input button { border: 0; background: none; padding: 2px; cursor: pointer; color: var(--line); }
+.star-rating-input button.filled { color: #f2b34d; }
+.star-rating-input button.filled svg { fill: #f2b34d; }
+.star-rating-display { display: inline-flex; gap: 2px; color: var(--line); }
+.star-rating-display svg.filled { color: #f2b34d; fill: #f2b34d; }
+
+.reviews-section { margin-top: 34px; padding-top: 26px; border-top: 1px solid var(--line); }
+.reviews-section h2 { font-family: Georgia, serif; font-weight: 500; margin: 0 0 16px; }
+.review-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+.review-list li { border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+.review-list-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; font-size: 0.8rem; font-weight: 700; }
+.review-list li p { margin: 0 0 8px; }
+.review-list li time { color: var(--muted); font-size: 0.7rem; }
+.review-empty { color: var(--muted); font-style: italic; }
+
+.social-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+.social-row select { flex: 0 0 140px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 10px; background: white; }
+.social-row input { flex: 1; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; }
+.icon-button { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 6px; }
+.icon-button:hover { color: var(--accent-dark); }
+
+.photo-picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; margin-top: 10px; }
+.photo-picker-item { position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; }
+.photo-picker-item img { width: 100%; height: 100%; object-fit: cover; }
+.photo-picker-item button { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border: 0; border-radius: 999px; background: rgba(20, 16, 12, 0.72); color: white; display: grid; place-items: center; cursor: pointer; }
+.photo-picker-add {
+  aspect-ratio: 1;
+  border: 1.5px dashed var(--line);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+.photo-picker-add input { display: none; }
+
+.review-photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-top: 10px; }
+.review-photo-grid figure { margin: 0; }
+.review-photo-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px; }
+.review-photo-grid button { margin-top: 4px; }
+.review-decision-row { display: flex; gap: 8px; align-items: center; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

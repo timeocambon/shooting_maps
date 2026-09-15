@@ -15,6 +15,7 @@ export function SiteHeader() {
 
       <nav className="main-nav" aria-label="Navigation principale">
         <Link href="/a-propos">Le projet</Link>
+        <Link href="/photographes">Photographes</Link>
         <Link className="button button-small" href="/proposer">
           Proposer un spot
         </Link>
