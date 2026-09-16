@@ -16,10 +16,6 @@ export function SiteHeader() {
 
       <nav className="main-nav" aria-label="Navigation principale">
         <SiteHeaderMenu />
-        <Link className="button button-small nav-cta" href="/proposer">
-          <span className="nav-cta-full">Proposer un spot</span>
-          <span className="nav-cta-short">Proposer</span>
-        </Link>
       </nav>
     </header>
   );

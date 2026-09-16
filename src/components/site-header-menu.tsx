@@ -80,6 +80,9 @@ export function SiteHeaderMenu() {
       </button>
       {open ? (
         <div className="header-menu-panel" role="menu">
+          <Link href="/proposer" role="menuitem" className="header-menu-cta" onClick={() => setOpen(false)}>
+            Proposer un spot
+          </Link>
           {publicLinks.map((link) => (
             <Link key={link.href} href={link.href} role="menuitem" onClick={() => setOpen(false)}>
               {link.label}
