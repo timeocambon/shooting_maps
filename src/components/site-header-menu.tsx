@@ -3,15 +3,46 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Menu } from "lucide-react";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
-const links = [
+type AccountLinks = { signedIn: boolean; isAdmin: boolean };
+
+const publicLinks = [
   { href: "/a-propos", label: "Le projet" },
   { href: "/photographes", label: "Photographes" },
 ];
 
 export function SiteHeaderMenu() {
   const [open, setOpen] = useState(false);
+  const [account, setAccount] = useState<AccountLinks | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // La session est lue côté navigateur : les pages publiques restent ainsi
+  // générées statiquement, au lieu d'être rendues à chaque requête.
+  useEffect(() => {
+    let active = true;
+
+    async function loadAccount() {
+      try {
+        const supabase = createSupabaseBrowserClient();
+        const { data } = await supabase.auth.getUser();
+        if (!active) return;
+        if (!data.user) {
+          setAccount({ signedIn: false, isAdmin: false });
+          return;
+        }
+        const { data: isAdmin } = await supabase.rpc("am_i_admin");
+        if (active) setAccount({ signedIn: true, isAdmin: Boolean(isAdmin) });
+      } catch {
+        if (active) setAccount({ signedIn: false, isAdmin: false });
+      }
+    }
+
+    loadAccount();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -49,11 +80,28 @@ export function SiteHeaderMenu() {
       </button>
       {open ? (
         <div className="header-menu-panel" role="menu">
-          {links.map((link) => (
+          {publicLinks.map((link) => (
             <Link key={link.href} href={link.href} role="menuitem" onClick={() => setOpen(false)}>
               {link.label}
             </Link>
           ))}
+
+          {account?.signedIn ? (
+            <Link href="/mon-espace" role="menuitem" onClick={() => setOpen(false)}>Mon espace</Link>
+          ) : null}
+
+          {account && !account.signedIn ? (
+            <>
+              <Link href="/connexion" role="menuitem" onClick={() => setOpen(false)}>Connexion</Link>
+              <Link href="/inscription" role="menuitem" onClick={() => setOpen(false)}>Créer un compte</Link>
+            </>
+          ) : null}
+
+          {account?.isAdmin ? (
+            <Link href="/admin" role="menuitem" className="header-menu-admin" onClick={() => setOpen(false)}>
+              Administration
+            </Link>
+          ) : null}
         </div>
       ) : null}
     </div>

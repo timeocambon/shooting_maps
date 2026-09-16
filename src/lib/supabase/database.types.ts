@@ -615,6 +615,27 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       photographers: {
         Row: {
           bio: string
@@ -625,6 +646,7 @@ export type Database = {
           internal_note: string | null
           location_label: string | null
           name: string
+          owner_user_id: string | null
           publication_state: Database["public"]["Enums"]["photographer_state"]
           slug: string
           socials: Json
@@ -640,6 +662,7 @@ export type Database = {
           internal_note?: string | null
           location_label?: string | null
           name: string
+          owner_user_id?: string | null
           publication_state?: Database["public"]["Enums"]["photographer_state"]
           slug: string
           socials?: Json
@@ -655,6 +678,7 @@ export type Database = {
           internal_note?: string | null
           location_label?: string | null
           name?: string
+          owner_user_id?: string | null
           publication_state?: Database["public"]["Enums"]["photographer_state"]
           slug?: string
           socials?: Json
@@ -668,6 +692,50 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_my_photographer_photo: {
+        Args: { p_object_path: string; p_public_url: string }
+        Returns: string
+      }
+      am_i_admin: {
+        Args: never
+        Returns: boolean
+      }
+      claim_photographer_profiles: {
+        Args: never
+        Returns: number
+      }
+      ensure_my_profile: {
+        Args: { p_display_name?: string }
+        Returns: string
+      }
+      get_my_photographer_profile: {
+        Args: never
+        Returns: {
+          bio: string
+          id: string
+          location_label: string | null
+          name: string
+          photos: Json
+          publication_state: string
+          slug: string
+          socials: Json
+          tagline: string
+        }[]
+      }
+      remove_my_photographer_photo: {
+        Args: { p_photo_id: string }
+        Returns: string
+      }
+      update_my_photographer_profile: {
+        Args: {
+          p_bio: string
+          p_location_label: string
+          p_name: string
+          p_socials: Json
+          p_tagline: string
+        }
+        Returns: string
+      }
       admin_review_photographer: {
         Args: { p_decision: string; p_internal_note: string; p_photographer_id: string }
         Returns: string

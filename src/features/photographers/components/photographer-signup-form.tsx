@@ -9,7 +9,9 @@ import {
   socialPlatforms,
   type SocialPlatform,
 } from "@/features/photographers/domain/photographer";
-import { createSupabasePublicBrowserClient } from "@/lib/supabase/public-browser";
+// Client lié aux cookies de session : si la personne est connectée, la fiche
+// créée lui appartient immédiatement (owner_user_id).
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const MAX_PHOTOS = 6;
 const MAX_PHOTO_BYTES = 6 * 1024 * 1024;
@@ -101,7 +103,7 @@ export function PhotographerSignupForm() {
 
     setPending(true);
     try {
-      const supabase = createSupabasePublicBrowserClient();
+      const supabase = createSupabaseBrowserClient();
       const { data: photographerId, error: createError } = await supabase.rpc("create_public_photographer", {
         p_name: parsed.data.name,
         p_tagline: parsed.data.tagline,

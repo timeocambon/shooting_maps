@@ -11,7 +11,6 @@ export function SiteFooter() {
         <Link href="/confidentialite">Confidentialité</Link>
         <Link href="/mentions-legales">Mentions légales</Link>
         <Link href="/demande-de-retrait">Demande de retrait</Link>
-        <Link href="/admin">Administration</Link>
       </nav>
     </footer>
   );
