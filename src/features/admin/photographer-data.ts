@@ -68,6 +68,52 @@ export async function getPhotographerQueue(): Promise<PhotographerSummary[]> {
   }));
 }
 
+export type AdminPhotographerRow = {
+  id: string;
+  slug: string;
+  name: string;
+  tagline: string;
+  contactEmail: string;
+  publicationState: string;
+  createdAt: string;
+  photoCount: number;
+  coverUrl: string | null;
+  hasOwner: boolean;
+};
+
+/** Toutes les fiches, quel que soit leur état : la file d'attente ne permet pas
+ *  de revenir sur une fiche déjà publiée ou masquée. */
+export async function getAllPhotographers(): Promise<AdminPhotographerRow[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("photographers")
+    .select(
+      "id, slug, name, tagline, contact_email, publication_state, created_at, owner_user_id, photographer_photos(public_url, display_order, moderation_state)",
+    )
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => {
+    const photos = [...(row.photographer_photos ?? [])].sort(
+      (left, right) => left.display_order - right.display_order,
+    );
+    const cover = photos.find((photo) => photo.moderation_state === "approved") ?? photos[0];
+    return {
+      id: row.id,
+      slug: row.slug,
+      name: row.name,
+      tagline: row.tagline,
+      contactEmail: row.contact_email,
+      publicationState: row.publication_state,
+      createdAt: row.created_at,
+      photoCount: photos.length,
+      coverUrl: cover?.public_url ?? null,
+      hasOwner: Boolean(row.owner_user_id),
+    };
+  });
+}
+
 export async function getPhotographerReview(id: string): Promise<PhotographerReview | null> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase

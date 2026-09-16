@@ -88,11 +88,13 @@ export async function setPhotographerStateAction(formData: FormData) {
   if (!parsed.success) return;
 
   const supabase = await createSupabaseServerClient();
-  await supabase.rpc("admin_set_photographer_state", {
+  const { error } = await supabase.rpc("admin_set_photographer_state", {
     p_photographer_id: parsed.data.photographerId,
     p_state: parsed.data.state,
   });
+  if (error) console.error("admin_set_photographer_state", error.message);
 
   revalidatePath("/photographes", "layout");
+  revalidatePath("/admin/photographes");
   revalidatePath(`/admin/photographes/${parsed.data.photographerId}`);
 }

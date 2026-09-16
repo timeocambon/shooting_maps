@@ -910,6 +910,31 @@ a { color: inherit; text-decoration: none; }
 .display-name-edit { margin-top: 12px; padding: 0; display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; color: var(--accent-dark); font-size: 0.78rem; font-weight: 800; cursor: pointer; }
 .display-name-edit:hover { text-decoration: underline; text-underline-offset: 3px; }
 
+/* Cartes d'administration (demandes de retrait, annuaire des photographes) */
+.admin-section-title { margin: 30px 0 14px; font-family: Georgia, serif; font-size: 1.25rem; font-weight: 500; }
+.admin-section-empty { margin: 0 0 8px; color: var(--muted); font-style: italic; }
+.admin-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; }
+.admin-card {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: #fffaf4;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  overflow-wrap: anywhere;
+}
+.admin-card-visual { height: 130px; border-radius: 12px; overflow: hidden; background: #ece7df; display: grid; place-items: center; }
+.admin-card-visual img { width: 100%; height: 100%; object-fit: cover; }
+.admin-card-visual svg { width: 30px; height: 30px; color: var(--muted); }
+.admin-card-visual-icon { height: 84px; background: #f3ede4; }
+.admin-card h2 { margin: 0; font-family: Georgia, serif; font-size: 1.12rem; font-weight: 500; }
+.admin-card-tagline { margin: 0; color: var(--ink); font-size: 0.84rem; }
+.admin-card-meta { display: flex; flex-direction: column; gap: 3px; color: var(--muted); font-size: 0.73rem; }
+.admin-card-meta span { display: inline-flex; align-items: center; gap: 5px; }
+.admin-card-actions { margin-top: auto; padding-top: 11px; border-top: 1px solid #eee9e2; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.admin-card-actions .text-decision { display: inline-flex; align-items: center; gap: 5px; }
+
 /* Les contenus saisis par les visiteurs (e-mails, liens, avis) ne doivent
    jamais élargir la mise en page sur mobile. */
 .admin-content, .moderation-review-shell, .spot-detail, .review-list li p, .photographer-card-body { overflow-wrap: anywhere; }
