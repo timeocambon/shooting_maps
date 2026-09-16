@@ -28,7 +28,7 @@ export function SpotCard({ spot, selected, onSelect }: SpotCardProps) {
       >
         <span className="spot-visual" aria-hidden="true">
           {spot.coverImageUrl ? (
-            <Image unoptimized fill sizes="(max-width: 620px) 100vw, 420px" src={spot.coverImageUrl} alt="" />
+            <Image fill sizes="(max-width: 620px) 100vw, 420px" src={spot.coverImageUrl} alt="" />
           ) : <span className="spot-visual-road" />}
           {spot.isDemo ? <span className="demo-chip">Démo</span> : null}
         </span>

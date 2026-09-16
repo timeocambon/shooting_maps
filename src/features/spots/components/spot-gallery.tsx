@@ -67,7 +67,6 @@ export function SpotGallery({ photoUrls, spotName }: SpotGalleryProps) {
               onClick={() => setOpenIndex(index)}
             >
               <Image
-                unoptimized
                 width={1600}
                 height={1200}
                 sizes={index === 0 ? "(max-width: 1180px) 100vw, 780px" : "(max-width: 620px) 100vw, 390px"}

@@ -12,6 +12,7 @@ import {
 // Client lié aux cookies de session : si la personne est connectée, la fiche
 // créée lui appartient immédiatement (owner_user_id).
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { prepareImageForUpload } from "@/lib/image-processing";
 
 const MAX_PHOTOS = 6;
 const MAX_PHOTO_BYTES = 6 * 1024 * 1024;
@@ -53,7 +54,7 @@ export function PhotographerSignupForm() {
     setSocials((current) => current.filter((_, i) => i !== index));
   }
 
-  function addPhotos(fileList: FileList | null) {
+  async function addPhotos(fileList: FileList | null) {
     if (!fileList) return;
     setError(null);
     const incoming = Array.from(fileList);
@@ -69,7 +70,10 @@ export function PhotographerSignupForm() {
         setError("Chaque image doit faire moins de 6 Mo.");
         continue;
       }
-      accepted.push({ file, previewUrl: URL.createObjectURL(file) });
+      // Réduite avant l'envoi : inutile de stocker du 4000 px pour un site qui
+      // n'affiche jamais au-delà de 2000.
+      const { file: prepared } = await prepareImageForUpload(file);
+      accepted.push({ file: prepared, previewUrl: URL.createObjectURL(prepared) });
     }
 
     if (accepted.length) setPhotos((current) => [...current, ...accepted]);

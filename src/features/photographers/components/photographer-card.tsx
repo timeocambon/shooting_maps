@@ -10,7 +10,7 @@ export function PhotographerCard({ photographer }: PhotographerCardProps) {
     <article className="photographer-card">
       <span className="photographer-visual" aria-hidden="true">
         {photographer.coverImageUrl ? (
-          <Image unoptimized fill sizes="(max-width: 620px) 100vw, 340px" src={photographer.coverImageUrl} alt="" />
+          <Image fill sizes="(max-width: 620px) 100vw, 340px" src={photographer.coverImageUrl} alt="" />
         ) : (
           <span className="photographer-visual-placeholder" />
         )}

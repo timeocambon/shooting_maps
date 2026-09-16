@@ -14,6 +14,7 @@ import {
   type ProfileEditState,
 } from "@/app/mon-espace/fiche/actions";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { prepareImageForUpload } from "@/lib/image-processing";
 
 const MAX_PHOTOS = 6;
 const MAX_PHOTO_BYTES = 6 * 1024 * 1024;
@@ -75,10 +76,12 @@ export function PhotographerEditForm({
     setPhotoBusy(true);
     try {
       const supabase = createSupabaseBrowserClient();
-      const objectPath = `photographers/${photographerId}/${crypto.randomUUID()}.${extensionFor(file)}`;
+      // Réduite avant l'envoi (voir prepareImageForUpload).
+      const { file: prepared } = await prepareImageForUpload(file);
+      const objectPath = `photographers/${photographerId}/${crypto.randomUUID()}.${extensionFor(prepared)}`;
       const { error: uploadError } = await supabase.storage
         .from("photographer-photos")
-        .upload(objectPath, file, { contentType: file.type });
+        .upload(objectPath, prepared, { contentType: prepared.type });
       if (uploadError) throw uploadError;
 
       const { data: publicUrlData } = supabase.storage.from("photographer-photos").getPublicUrl(objectPath);
