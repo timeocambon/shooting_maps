@@ -7,11 +7,6 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 type AccountLinks = { signedIn: boolean; isAdmin: boolean };
 
-const publicLinks = [
-  { href: "/a-propos", label: "Le projet" },
-  { href: "/photographes", label: "Photographes" },
-];
-
 export function SiteHeaderMenu() {
   const [open, setOpen] = useState(false);
   const [account, setAccount] = useState<AccountLinks | null>(null);
@@ -83,22 +78,17 @@ export function SiteHeaderMenu() {
           <Link href="/proposer" role="menuitem" className="header-menu-cta" onClick={() => setOpen(false)}>
             Proposer un spot
           </Link>
-          {publicLinks.map((link) => (
-            <Link key={link.href} href={link.href} role="menuitem" onClick={() => setOpen(false)}>
-              {link.label}
-            </Link>
-          ))}
+          <Link href="/photographes" role="menuitem" onClick={() => setOpen(false)}>
+            Photographes
+          </Link>
 
-          {account?.signedIn ? (
-            <Link href="/mon-espace" role="menuitem" onClick={() => setOpen(false)}>Mon espace</Link>
-          ) : null}
-
-          {account && !account.signedIn ? (
-            <>
-              <Link href="/connexion" role="menuitem" onClick={() => setOpen(false)}>Connexion</Link>
-              <Link href="/inscription" role="menuitem" onClick={() => setOpen(false)}>Créer un compte</Link>
-            </>
-          ) : null}
+          <Link
+            href={account?.signedIn ? "/mon-espace" : "/compte"}
+            role="menuitem"
+            onClick={() => setOpen(false)}
+          >
+            {account?.signedIn ? "Mon espace" : "Connexion / Inscription"}
+          </Link>
 
           {account?.isAdmin ? (
             <Link href="/admin" role="menuitem" className="header-menu-admin" onClick={() => setOpen(false)}>

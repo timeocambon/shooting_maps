@@ -17,7 +17,7 @@ const stateLabels: Record<string, string> = {
 
 export default async function MySpacePage() {
   const account = await getAccountState();
-  if (account.status !== "authenticated") redirect("/connexion");
+  if (account.status !== "authenticated") redirect("/compte");
 
   const photographer = await getMyPhotographerProfile();
 

@@ -870,7 +870,7 @@ a { color: inherit; text-decoration: none; }
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  min-width: 210px;
+  min-width: 230px;
   display: flex;
   flex-direction: column;
   padding: 8px;
@@ -891,7 +891,11 @@ a { color: inherit; text-decoration: none; }
 .header-menu-panel a.header-menu-cta:hover { color: white; background: var(--accent-dark); }
 .header-menu-panel a.header-menu-admin { margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--line); border-radius: 0 0 9px 9px; color: var(--accent-dark); }
 
-.auth-form-card { max-width: 520px; }
+.auth-panel { max-width: 520px; }
+.auth-tabs { margin-top: 24px; display: flex; gap: 6px; padding: 5px; border: 1px solid var(--line); border-radius: 13px; background: #fffaf4; }
+.auth-tabs button { flex: 1; min-height: 40px; border: 0; border-radius: 9px; background: none; color: var(--muted); font-weight: 750; font-size: 0.82rem; cursor: pointer; }
+.auth-tabs button.active { color: white; background: var(--accent); }
+.auth-form-card { max-width: 520px; margin-top: 14px; }
 .account-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin: 24px 0 18px; }
 .account-card { padding: 22px; border: 1px solid var(--line); border-radius: 18px; background: white; display: flex; flex-direction: column; gap: 10px; }
 .account-card svg { color: var(--accent); }

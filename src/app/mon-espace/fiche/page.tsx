@@ -19,7 +19,7 @@ function parseSocials(value: unknown): SocialLink[] {
 
 export default async function EditMyPhotographerPage() {
   const account = await getAccountState();
-  if (account.status !== "authenticated") redirect("/connexion");
+  if (account.status !== "authenticated") redirect("/compte");
 
   const photographer = await getMyPhotographerProfile();
   if (!photographer) redirect("/devenir-photographe");
