@@ -23,10 +23,11 @@ export const metadata: Metadata = {
       "Des spots vérifiés autour de Toulouse pour préparer vos shootings photo moto.",
     images: [
       {
-        url: "/og.png",
-        width: 1731,
-        height: 909,
-        alt: "Spotride, une moto face aux collines au coucher du soleil",
+        url: "/og.jpg",
+        width: 1200,
+        height: 630,
+        type: "image/jpeg",
+        alt: "Spotride, une moto garée au bord d'une route de campagne au coucher du soleil",
       },
     ],
   },
@@ -35,7 +36,7 @@ export const metadata: Metadata = {
     title: "Spotride — Trouvez votre prochain décor",
     description:
       "Des spots vérifiés autour de Toulouse pour préparer vos shootings photo moto.",
-    images: ["/og.png"],
+    images: ["/og.jpg"],
   },
   // Le site est ouvert à l'indexation. Les pages privées (administration,
   // espace personnel, formulaires) portent leur propre « noindex ».
