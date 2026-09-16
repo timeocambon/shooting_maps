@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { LogIn, UserPlus } from "lucide-react";
+import { LogIn, MailCheck, UserPlus } from "lucide-react";
 import {
   signInAccountAction,
   signUpAction,
@@ -46,6 +46,22 @@ function SignInForm() {
 
 function SignUpForm() {
   const [state, formAction, pending] = useActionState(signUpAction, initialState);
+
+  if (state.status === "confirmation-sent") {
+    return (
+      <section className="report-confirmation" aria-live="polite">
+        <MailCheck aria-hidden="true" />
+        <p className="kicker">Compte créé</p>
+        <h2>Confirmez votre adresse e-mail</h2>
+        <p>
+          Un lien vient d’être envoyé à <strong>{state.email}</strong>. Ouvrez-le pour
+          activer votre compte : votre fiche photographe y sera rattachée
+          automatiquement si elle porte la même adresse.
+        </p>
+        <p>Pensez à regarder dans vos indésirables si le message tarde.</p>
+      </section>
+    );
+  }
 
   return (
     <form className="report-form auth-form-card" action={formAction}>

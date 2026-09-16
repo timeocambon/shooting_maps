@@ -8,13 +8,13 @@ import { getAccountState } from "@/features/account/account-session";
 
 export const metadata = { title: "Connexion ou création de compte", robots: { index: false, follow: false } };
 
-type AccountPageProps = { searchParams: Promise<{ mode?: string }> };
+type AccountPageProps = { searchParams: Promise<{ mode?: string; confirmation?: string }> };
 
 export default async function AccountPage({ searchParams }: AccountPageProps) {
   const account = await getAccountState();
   if (account.status === "authenticated") redirect("/mon-espace");
 
-  const { mode } = await searchParams;
+  const { mode, confirmation } = await searchParams;
 
   return (
     <main>
@@ -26,6 +26,12 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
           <h1>Connexion</h1>
           <p className="lead">Connectez-vous ou créez un compte pour gérer votre fiche photographe.</p>
         </section>
+        {confirmation === "echec" ? (
+          <p className="form-error" role="alert">
+            Ce lien de confirmation est invalide ou a expiré. Recréez un compte avec la même
+            adresse pour en recevoir un nouveau.
+          </p>
+        ) : null}
         <AuthPanel defaultMode={mode === "inscription" ? "signup" : "signin"} />
         <SiteFooter />
       </div>

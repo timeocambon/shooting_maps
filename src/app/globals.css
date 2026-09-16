@@ -625,7 +625,7 @@ a { color: inherit; text-decoration: none; }
 .report-link { color: var(--accent-dark); font-size: 0.74rem; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
 .unavailable-spot, .report-confirmation { width: min(720px, 100%); min-height: 430px; margin: 28px auto 60px; padding: clamp(28px, 6vw, 64px); border: 1px solid var(--line); border-radius: 22px; display: flex; flex-direction: column; align-items: start; justify-content: center; background: var(--paper-strong); }
 .unavailable-spot > svg, .report-confirmation > svg { width: 42px; height: 42px; margin-bottom: 24px; color: var(--accent); }
-.unavailable-spot h1, .report-confirmation h1 { margin: 0; font-family: Georgia, serif; font-size: clamp(2.7rem, 6vw, 5rem); font-weight: 500; line-height: 0.96; letter-spacing: -0.04em; }
+.unavailable-spot h1, .report-confirmation h1, .report-confirmation h2 { margin: 0; font-family: Georgia, serif; font-size: clamp(2.7rem, 6vw, 5rem); font-weight: 500; line-height: 0.96; letter-spacing: -0.04em; }
 .unavailable-spot > p:not(.kicker), .report-confirmation > p:not(.kicker) { max-width: 570px; color: var(--muted); line-height: 1.7; }
 .unavailable-spot .button, .report-confirmation .button { margin-top: 12px; }
 

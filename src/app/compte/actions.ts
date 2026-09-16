@@ -6,7 +6,14 @@ import { z } from "zod";
 import { isSupabaseConfigured } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export type AuthActionState = { status: "idle" } | { status: "error"; message: string };
+export type AuthActionState =
+  | { status: "idle" }
+  | { status: "error"; message: string }
+  // Quand la confirmation d'adresse est activée dans Supabase, signUp ne rend
+  // aucune session : le compte n'existe vraiment qu'après le clic dans l'e-mail.
+  | { status: "confirmation-sent"; email: string };
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://127.0.0.1:3000";
 
 const signUpSchema = z.object({
   displayName: z.string().trim().min(2).max(80),
@@ -51,9 +58,16 @@ export async function signUpAction(
   }
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
+    options: {
+      emailRedirectTo: `${siteUrl}/auth/confirmation`,
+      // Le profil ne peut être créé qu'une fois la session ouverte. En
+      // attendant, le nom voyage avec le compte Supabase et sera repris par
+      // la route de confirmation.
+      data: { display_name: parsed.data.displayName },
+    },
   });
 
   if (error) {
@@ -65,6 +79,12 @@ export async function signUpAction(
         ? "Un compte existe déjà avec cette adresse. Utilisez la page de connexion."
         : "La création du compte a échoué. Réessayez dans quelques instants.",
     };
+  }
+
+  // Aucune session : Supabase attend la confirmation de l'adresse. Inutile
+  // d'appeler les RPC, elles s'exécuteraient en anonyme et échoueraient.
+  if (!data.session) {
+    return { status: "confirmation-sent", email: parsed.data.email };
   }
 
   const { error: profileError } = await supabase.rpc("ensure_my_profile", {
@@ -97,7 +117,13 @@ export async function signInAccountAction(
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
 
   if (error) {
-    return { status: "error", message: "Identifiants incorrects." };
+    const unconfirmed = error.message.toLowerCase().includes("not confirmed");
+    return {
+      status: "error",
+      message: unconfirmed
+        ? "Votre adresse n'est pas encore confirmée : ouvrez le lien reçu par e-mail."
+        : "Identifiants incorrects.",
+    };
   }
 
   await claimAndRefresh(supabase);
