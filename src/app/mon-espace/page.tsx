@@ -4,6 +4,7 @@ import { ArrowLeft, Camera, ShieldCheck, SquarePen } from "lucide-react";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { signOutAccountAction } from "@/app/compte/actions";
+import { DisplayNameForm } from "@/features/account/components/display-name-form";
 import { getAccountState, getMyPhotographerProfile } from "@/features/account/account-session";
 
 export const metadata = { title: "Mon espace", robots: { index: false, follow: false } };
@@ -29,8 +30,9 @@ export default async function MySpacePage() {
 
         <section className="hero">
           <p className="kicker">Mon espace</p>
-          <h1>Bonjour {account.displayName ?? account.email}</h1>
+          <h1>Bonjour{account.displayName ? ` ${account.displayName}` : ""}</h1>
           <p className="lead">{account.email}</p>
+          <DisplayNameForm displayName={account.displayName} />
         </section>
 
         <div className="account-cards">

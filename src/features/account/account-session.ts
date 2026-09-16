@@ -22,16 +22,19 @@ export async function getAccountState(): Promise<AccountState> {
   const user = data.user;
   if (!user?.email) return { status: "anonymous" };
 
-  const [{ data: profile }, { data: isAdmin }] = await Promise.all([
+  const [{ data: profile }, { data: isAdmin }, { data: staffProfile }] = await Promise.all([
     supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle(),
     supabase.rpc("am_i_admin"),
+    // Repli pour les comptes créés avant les profils (une équipe de modération
+    // a déjà un nom d'affichage). Silencieux si la politique ne l'autorise pas.
+    supabase.from("admin_users").select("display_name").eq("user_id", user.id).maybeSingle(),
   ]);
 
   return {
     status: "authenticated",
     userId: user.id,
     email: user.email,
-    displayName: profile?.display_name ?? null,
+    displayName: profile?.display_name ?? staffProfile?.display_name ?? null,
     isAdmin: Boolean(isAdmin),
   };
 }

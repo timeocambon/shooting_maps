@@ -104,6 +104,33 @@ export async function signInAccountAction(
   redirect("/mon-espace");
 }
 
+const displayNameSchema = z.string().trim().min(2).max(80);
+
+export async function updateDisplayNameAction(
+  _previousState: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  if (!isSupabaseConfigured()) {
+    return { status: "error", message: "Le service de comptes n’est pas encore connecté." };
+  }
+
+  const parsed = displayNameSchema.safeParse(formData.get("displayName"));
+  if (!parsed.success) {
+    return { status: "error", message: "Votre nom doit contenir entre 2 et 80 caractères." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("ensure_my_profile", { p_display_name: parsed.data });
+
+  if (error) {
+    console.error("ensure_my_profile", error.message);
+    return { status: "error", message: "L’enregistrement du nom a échoué." };
+  }
+
+  revalidatePath("/mon-espace", "layout");
+  return { status: "idle" };
+}
+
 export async function signOutAccountAction() {
   if (isSupabaseConfigured()) {
     const supabase = await createSupabaseServerClient();
