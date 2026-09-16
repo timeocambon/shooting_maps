@@ -9,7 +9,9 @@ import {
   ArrowUp,
   Camera,
   Check,
+  LocateFixed,
   LoaderCircle,
+  MapPinned,
   MapPin,
   Search,
   ShieldCheck,
@@ -22,6 +24,7 @@ import {
   type SpotCategory,
 } from "@/features/spots/domain/spot";
 import { createSupabasePublicBrowserClient } from "@/lib/supabase/public-browser";
+import { prepareImageForUpload } from "@/lib/image-processing";
 
 const DRAFT_KEY = "spotride:proposal-draft:v1";
 const DRAFT_TTL = 7 * 24 * 60 * 60 * 1000;
@@ -151,6 +154,15 @@ function isDraft(value: unknown): value is Draft {
   return Boolean(value && typeof value === "object" && "name" in value && "latitude" in value);
 }
 
+/**
+ * Deux fichiers sont considérés identiques sur leur nom (sans extension) et
+ * leur date : la conversion en WebP change l'extension et le poids, pas
+ * l'image choisie.
+ */
+function photoKey(file: File): string {
+  return `${file.name.replace(/\.[^.]+$/, "")}-${file.lastModified}`;
+}
+
 export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -165,6 +177,9 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
   const [hydrated, setHydrated] = useState(false);
   const [website, setWebsite] = useState("");
   const [geocoding, setGeocoding] = useState(false);
+  const [geolocating, setGeolocating] = useState(false);
+  const [confirmingLocation, setConfirmingLocation] = useState(false);
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [geocodingMessage, setGeocodingMessage] = useState("");
   const [addressResults, setAddressResults] = useState<GeocodingResult[]>([]);
 
@@ -203,7 +218,9 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
 
   const summary = useMemo(
     () => [
-      `${draft.address || draft.municipality || "Adresse à préciser"} · ${draft.displayPrecision === "exact" ? "position exacte" : "position approximative"}`,
+      draft.locationConfirmed
+        ? `${draft.address || draft.municipality} · ${draft.displayPrecision === "exact" ? "point exact" : "zone approximative"}`
+        : "Position à confirmer",
       draft.name || "Nom à préciser",
       `${draft.parking ? "stationnement renseigné" : "stationnement à préciser"} · ${draft.risks ? "risques renseignés" : "risques à préciser"}`,
       `${photos.length} photo${photos.length > 1 ? "s" : ""}`,
@@ -226,7 +243,8 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
       longitude: String(result.longitude),
       locationConfirmed: true,
     }));
-    setGeocodingMessage("Adresse localisée. Ajustez le repère sur la carte si nécessaire.");
+    setGpsAccuracy(null);
+    setGeocodingMessage("Adresse sélectionnée. Le point est confirmé ; déplacez la carte seulement si vous devez l’ajuster.");
     setAddressResults([]);
   }
 
@@ -257,8 +275,12 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
           "Adresse introuvable. Complétez-la ou placez directement le repère sur la carte.",
         );
       } else {
-        applyGeocodingResult(matches[0]);
-        setAddressResults(matches.slice(1));
+        setAddressResults(matches);
+        setGeocodingMessage(
+          matches.length === 1
+            ? "Un résultat trouvé. Sélectionnez-le pour placer le point."
+            : `${matches.length} résultats trouvés. Choisissez l’adresse qui correspond au spot.`,
+        );
       }
     } catch {
       setGeocodingMessage(
@@ -266,6 +288,82 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
       );
     } finally {
       setGeocoding(false);
+    }
+  }
+
+  function useCurrentLocation() {
+    if (geolocating) return;
+    if (!("geolocation" in navigator)) {
+      setGeocodingMessage("La localisation GPS n’est pas disponible sur cet appareil.");
+      return;
+    }
+
+    setGeolocating(true);
+    setAddressResults([]);
+    setGeocodingMessage("Recherche de votre position GPS…");
+
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        const latitude = Number(coords.latitude.toFixed(6));
+        const longitude = Number(coords.longitude.toFixed(6));
+        setDraft((current) => ({
+          ...current,
+          latitude: String(latitude),
+          longitude: String(longitude),
+          locationConfirmed: false,
+        }));
+        setGpsAccuracy(Math.round(coords.accuracy));
+        setGeocodingMessage(
+          `Position GPS trouvée à environ ${Math.max(1, Math.round(coords.accuracy))} m près. Ajustez la carte, puis confirmez le point.`,
+        );
+        setGeolocating(false);
+      },
+      (error) => {
+        setGeocodingMessage(
+          error.code === error.PERMISSION_DENIED
+            ? "La localisation n’a pas été autorisée. Recherchez une adresse ou placez le point sur la carte."
+            : "Votre position n’a pas pu être déterminée. Recherchez une adresse ou placez le point sur la carte.",
+        );
+        setGeolocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 12_000, maximumAge: 30_000 },
+    );
+  }
+
+  async function confirmLocation() {
+    const latitude = Number(draft.latitude);
+    const longitude = Number(draft.longitude);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || confirmingLocation) return;
+
+    setConfirmingLocation(true);
+    setGeocodingMessage("Confirmation du point et recherche de l’adresse la plus proche…");
+
+    try {
+      const params = new URLSearchParams({
+        latitude: String(latitude),
+        longitude: String(longitude),
+      });
+      const response = await fetch(`/api/geocodage?${params.toString()}`);
+      const result = (await response.json()) as GeocodingResponse;
+      const match = result.results?.[0];
+
+      setDraft((current) => ({
+        ...current,
+        address: match?.label || current.address,
+        municipality: match?.municipality || current.municipality,
+        postalCode: match?.postalCode || current.postalCode,
+        locationConfirmed: true,
+      }));
+      setGeocodingMessage(
+        match
+          ? "Point confirmé. L’adresse la plus proche a été renseignée automatiquement."
+          : "Point confirmé. Vérifiez simplement la commune et le code postal ci-dessous.",
+      );
+    } catch {
+      setDraft((current) => ({ ...current, locationConfirmed: true }));
+      setGeocodingMessage("Point confirmé. Vérifiez simplement l’adresse, la commune et le code postal.");
+    } finally {
+      setConfirmingLocation(false);
     }
   }
 
@@ -346,11 +444,9 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
 
   async function addPhotos(fileList: FileList | null) {
     const incoming = Array.from(fileList ?? []);
-    const existingKeys = new Set(
-      photos.map((photo) => `${photo.name}-${photo.size}-${photo.lastModified}`),
-    );
+    const existingKeys = new Set(photos.map(photoKey));
     const uniqueIncoming = incoming.filter((photo) => {
-      const key = `${photo.name}-${photo.size}-${photo.lastModified}`;
+      const key = photoKey(photo);
       if (existingKeys.has(key)) return false;
       existingKeys.add(key);
       return true;
@@ -370,11 +466,16 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
       }
 
       try {
+        // Le contrôle de dimensions porte sur le fichier d'origine.
         const { width, height } = await readImageDimensions(photo);
         if (width < 1000 || height < 600) {
           rejected.push(`${photo.name} (${width} × ${height} px)`);
         } else {
-          accepted.push(photo);
+          // Réduite et réencodée avant l'envoi : allège le stockage, et
+          // surtout supprime les métadonnées EXIF (dont les coordonnées GPS
+          // du lieu de prise de vue, qu'une fiche peut vouloir garder floues).
+          const { file: prepared } = await prepareImageForUpload(photo, { forceReencode: true });
+          accepted.push(prepared);
         }
       } catch {
         rejected.push(`${photo.name} est illisible ou n’est pas une image compatible`);
@@ -488,7 +589,10 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
         const { error: uploadError } = await supabase.storage
           .from("spot-originals")
           .uploadToSignedUrl(signed.path, signed.token, photo);
-        if (uploadError) throw new Error("upload_failed");
+        if (uploadError) {
+          console.error("[submitProposal] uploadToSignedUrl failed", uploadError);
+          throw new Error(`upload_failed: ${uploadError.message || uploadError.name || "inconnu"}`);
+        }
 
         uploadedPhotos.push({ path: signed.path, index });
       }
@@ -524,7 +628,7 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
         if (token) params.set("jeton", token);
       }
       router.push(`/proposition-confirmee?${params.toString()}`);
-    } catch {
+    } catch (submitError) {
       if (proposalId && uploadSecret) {
         try {
           const supabase = createSupabasePublicBrowserClient();
@@ -537,7 +641,18 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
           // ignorée par la modération tant qu'elle n'est pas confirmée.
         }
       }
-      setErrors(["La connexion a été interrompue. Votre brouillon est conservé."]);
+      // TEMPORAIRE (diagnostic) : on affiche le détail technique de l'erreur
+      // à l'écran pour identifier la cause exacte sur mobile. À retirer une
+      // fois le problème résolu.
+      const detail =
+        submitError instanceof Error
+          ? `${submitError.name}: ${submitError.message}`
+          : String(submitError);
+      console.error("[submitProposal] failed", submitError);
+      setErrors([
+        "La connexion a été interrompue. Votre brouillon est conservé.",
+        `Détail technique : ${detail}`,
+      ]);
       setSubmitting(false);
       setSubmitStage("");
     }
@@ -559,8 +674,12 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
           {step === 0 ? (
             <fieldset>
               <legend><MapPin /> Où se trouve le spot ?</legend>
-              <p className="fieldset-intro">Saisissez une adresse pour placer automatiquement le repère, puis ajustez-le sur la carte si nécessaire. La position exacte reste privée tant que la modération n&apos;est pas terminée.</p>
+              <p className="fieldset-intro">Recherchez le lieu, vérifiez le point sur la carte et ajustez-le si besoin. La position exacte reste privée jusqu&apos;à la validation par la modération.</p>
               <div className="address-search-block">
+                <div className="location-method-heading">
+                  <span>1</span>
+                  <div><strong>Retrouvez le lieu</strong><small>Avec une adresse, un nom de lieu ou votre GPS</small></div>
+                </div>
                 <label htmlFor="spot-address">Adresse ou nom du lieu</label>
                 <div className="address-search-row">
                   <input
@@ -591,45 +710,101 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
                     disabled={geocoding}
                   >
                     {geocoding ? <LoaderCircle className="spin" size={17} /> : <Search size={17} />}
-                    {geocoding ? "Recherche…" : "Localiser"}
+                    {geocoding ? "Recherche…" : "Rechercher"}
                   </button>
                 </div>
-                {geocodingMessage ? <p className="address-search-message" role="status">{geocodingMessage}</p> : null}
+                <button
+                  className="current-location-button"
+                  type="button"
+                  onClick={useCurrentLocation}
+                  disabled={geolocating}
+                >
+                  {geolocating ? <LoaderCircle className="spin" size={17} /> : <LocateFixed size={17} />}
+                  {geolocating ? "Localisation en cours…" : "Utiliser ma position actuelle"}
+                </button>
+                {geocodingMessage ? <p className="address-search-message" role="status" aria-live="polite">{geocodingMessage}</p> : null}
                 {addressResults.length ? (
-                  <div className="address-results" aria-label="Autres adresses possibles">
-                    <span>Autres résultats :</span>
+                  <div className="address-results" aria-label="Résultats de la recherche">
+                    <strong>Choisissez le bon résultat</strong>
                     {addressResults.map((result) => (
                       <button key={`${result.label}-${result.longitude}-${result.latitude}`} type="button" onClick={() => applyGeocodingResult(result)}>
-                        {result.label}
+                        <MapPinned size={18} />
+                        <span><strong>{result.label}</strong><small>{[result.postalCode, result.municipality].filter(Boolean).join(" ")}</small></span>
+                        <ArrowRight size={17} />
                       </button>
                     ))}
                   </div>
                 ) : null}
               </div>
-              <LocationPicker
-                latitude={Number(draft.latitude) || 43.6045}
-                longitude={Number(draft.longitude) || 1.4442}
-                onChange={(latitude, longitude) => {
-                  setDraft((current) => ({
-                    ...current,
-                    latitude: String(latitude),
-                    longitude: String(longitude),
-                    locationConfirmed: true,
-                  }));
-                }}
-                styleUrl={mapStyleUrl}
-              />
-              <div className="form-grid">
-                <label>Commune<input value={draft.municipality} onChange={(event) => update("municipality", event.target.value)} required /></label>
-                <label>Code postal<input inputMode="numeric" value={draft.postalCode} onChange={(event) => update("postalCode", event.target.value)} required /></label>
+              <div className="location-method-heading map-method-heading">
+                <span>2</span>
+                <div><strong>Placez le repère précisément</strong><small>Faites glisser la carte ; la pointe orange reste au centre</small></div>
+              </div>
+              <div className="location-workspace">
+                <LocationPicker
+                  latitude={Number(draft.latitude) || 43.6045}
+                  longitude={Number(draft.longitude) || 1.4442}
+                  confirmed={draft.locationConfirmed}
+                  onChange={(latitude, longitude) => {
+                    setDraft((current) => ({
+                      ...current,
+                      latitude: String(latitude),
+                      longitude: String(longitude),
+                      locationConfirmed: false,
+                    }));
+                    setGpsAccuracy(null);
+                    setGeocodingMessage("Le point a été déplacé. Confirmez cette nouvelle position.");
+                  }}
+                  styleUrl={mapStyleUrl}
+                />
+                <aside className={`location-selection-card${draft.locationConfirmed ? " is-confirmed" : ""}`} aria-live="polite">
+                  <span className="location-selection-status">
+                    {draft.locationConfirmed ? <Check size={16} /> : <MapPin size={16} />}
+                    {draft.locationConfirmed ? "Position confirmée" : "Position à confirmer"}
+                  </span>
+                  <strong>{draft.address || "Placez le repère sur le spot"}</strong>
+                  <p>{[draft.postalCode, draft.municipality].filter(Boolean).join(" ")}</p>
+                  {gpsAccuracy ? <small>Précision GPS estimée : environ {gpsAccuracy} m</small> : null}
+                  <code>{Number(draft.latitude).toFixed(6)}, {Number(draft.longitude).toFixed(6)}</code>
+                  {draft.locationConfirmed ? (
+                    <p className="location-confirmed-hint">Déplacez la carte pour corriger le point.</p>
+                  ) : (
+                    <button
+                      className="button"
+                      type="button"
+                      onClick={() => void confirmLocation()}
+                      disabled={confirmingLocation}
+                    >
+                      {confirmingLocation ? <LoaderCircle className="spin" size={17} /> : <Check size={17} />}
+                      {confirmingLocation ? "Confirmation…" : "Confirmer ce point"}
+                    </button>
+                  )}
+                </aside>
+              </div>
+              <div className="location-method-heading location-final-heading">
+                <span>3</span>
+                <div><strong>Choisissez ce qui sera affiché</strong><small>Ces informations pourront être corrigées pendant la modération</small></div>
+              </div>
+              <div className="location-options">
+                <div className="display-precision-options field-wide" role="radiogroup" aria-label="Affichage public de la position">
+                  <label className={draft.displayPrecision === "exact" ? "selected" : ""}>
+                    <input type="radio" name="displayPrecision" value="exact" checked={draft.displayPrecision === "exact"} onChange={() => update("displayPrecision", "exact")} />
+                    <span><strong>Point exact</strong><small>Le repère précis sera visible après validation.</small></span>
+                  </label>
+                  <label className={draft.displayPrecision === "approximate" ? "selected" : ""}>
+                    <input type="radio" name="displayPrecision" value="approximate" checked={draft.displayPrecision === "approximate"} onChange={() => update("displayPrecision", "approximate")} />
+                    <span><strong>Zone approximative</strong><small>À choisir pour un lieu sensible ou fragile.</small></span>
+                  </label>
+                </div>
                 <details className="coordinate-details field-wide">
-                  <summary>Coordonnées précises <span>facultatif</span></summary>
-                  <div className="coordinate-grid">
-                    <label>Latitude<input type="number" step="0.000001" value={draft.latitude} onChange={(event) => { update("latitude", event.target.value); update("locationConfirmed", true); }} /></label>
-                    <label>Longitude<input type="number" step="0.000001" value={draft.longitude} onChange={(event) => { update("longitude", event.target.value); update("locationConfirmed", true); }} /></label>
+                  <summary>Corriger la commune ou les coordonnées <span>option avancée</span></summary>
+                  <div className="location-admin-grid">
+                    <label>Commune<input value={draft.municipality} onChange={(event) => update("municipality", event.target.value)} required /></label>
+                    <label>Code postal<input inputMode="numeric" value={draft.postalCode} onChange={(event) => update("postalCode", event.target.value)} required /></label>
+                    <label>Latitude<input type="number" step="0.000001" value={draft.latitude} onChange={(event) => { update("latitude", event.target.value); update("locationConfirmed", false); }} /></label>
+                    <label>Longitude<input type="number" step="0.000001" value={draft.longitude} onChange={(event) => { update("longitude", event.target.value); update("locationConfirmed", false); }} /></label>
                   </div>
                 </details>
-                <label className="field-wide">Précision proposée<select value={draft.displayPrecision} onChange={(event) => update("displayPrecision", event.target.value as Draft["displayPrecision"])}><option value="exact">Position exacte</option><option value="approximate">Zone approximative</option></select></label>
               </div>
               <label className="check-row"><input type="checkbox" checked={draft.accessWithoutTrespass} onChange={(event) => update("accessWithoutTrespass", event.target.checked)} /><span>Je confirme que l&apos;accès ne nécessite ni intrusion, ni arrêt dangereux.</span></label>
             </fieldset>
@@ -672,7 +847,7 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
               <p className="fieldset-intro">2 à 6 images JPEG, PNG ou WebP, 15 Mo maximum chacune et au moins 1000 × 600 pixels. Les métadonnées sont retirées des versions publiables.</p>
               <label className="upload-zone"><Camera /><strong>{checkingPhotos ? "Vérification des images…" : photos.length ? "Ajouter d’autres photos" : "Choisir des photos"}</strong><span>{photos.length}/6 sélectionnées · vous pouvez les choisir ensemble ou une par une.</span><input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={checkingPhotos} onChange={(event) => { void addPhotos(event.currentTarget.files); event.currentTarget.value = ""; }} /></label>
               {photoSelectionMessage ? <p className={`photo-selection-message${photoSelectionError ? " is-error" : ""}`} role={photoSelectionError ? "alert" : "status"}>{photoSelectionMessage}</p> : null}
-              <div className="photo-file-list">{photos.map((photo, index) => <article key={`${photo.name}-${photo.size}-${photo.lastModified}`}><div><strong>{index + 1}. {photo.name}</strong><span>{(photo.size / 1024 / 1024).toFixed(1)} Mo</span></div><div><button type="button" onClick={() => movePhoto(index, -1)} disabled={index === 0} aria-label={`Monter ${photo.name}`}><ArrowUp size={16} /></button><button type="button" onClick={() => movePhoto(index, 1)} disabled={index === photos.length - 1} aria-label={`Descendre ${photo.name}`}><ArrowDown size={16} /></button><button type="button" onClick={() => setPhotos((current) => current.filter((_, photoIndex) => photoIndex !== index))} aria-label={`Supprimer ${photo.name}`}><Trash2 size={16} /></button></div></article>)}</div>
+              <div className="photo-file-list">{photos.map((photo, index) => <article key={photoKey(photo)}><div><strong>{index + 1}. {photo.name}</strong><span>{(photo.size / 1024 / 1024).toFixed(1)} Mo</span></div><div><button type="button" onClick={() => movePhoto(index, -1)} disabled={index === 0} aria-label={`Monter ${photo.name}`}><ArrowUp size={16} /></button><button type="button" onClick={() => movePhoto(index, 1)} disabled={index === photos.length - 1} aria-label={`Descendre ${photo.name}`}><ArrowDown size={16} /></button><button type="button" onClick={() => setPhotos((current) => current.filter((_, photoIndex) => photoIndex !== index))} aria-label={`Supprimer ${photo.name}`}><Trash2 size={16} /></button></div></article>)}</div>
               <div className="form-grid"><label className="field-wide">Crédit photo <span>facultatif</span><input value={draft.photoCredit} maxLength={120} onChange={(event) => update("photoCredit", event.target.value)} /></label></div>
               <label className="check-row"><input type="checkbox" checked={draft.rightsDeclared} onChange={(event) => update("rightsDeclared", event.target.checked)} /><span>Je possède les droits nécessaires pour autoriser la diffusion de ces photos.</span></label>
               <label className="check-row"><input type="checkbox" checked={draft.peopleConfirmed} onChange={(event) => update("peopleConfirmed", event.target.checked)} /><span>Aucune personne reconnaissable n&apos;apparaît sans accord ; les plaques visibles seront contrôlées avant publication.</span></label>

@@ -14,6 +14,17 @@
 export const MAX_UPLOAD_DIMENSION = 2000;
 export const UPLOAD_QUALITY = 0.82;
 
+export type PrepareOptions = {
+  /** Plus grande dimension conservée, en pixels. */
+  maxDimension?: number;
+  /**
+   * Conserve le résultat même s'il est plus lourd que l'original. Utile quand
+   * le but n'est pas seulement d'alléger : réencoder l'image supprime au
+   * passage les métadonnées EXIF, dont les coordonnées GPS de la prise de vue.
+   */
+  forceReencode?: boolean;
+};
+
 export type ProcessedImage = {
   file: File;
   originalBytes: number;
@@ -34,7 +45,7 @@ function targetSize(width: number, height: number, maxDimension: number) {
  */
 export async function prepareImageForUpload(
   file: File,
-  maxDimension = MAX_UPLOAD_DIMENSION,
+  { maxDimension = MAX_UPLOAD_DIMENSION, forceReencode = false }: PrepareOptions = {},
 ): Promise<ProcessedImage> {
   const fallback: ProcessedImage = { file, originalBytes: file.size, bytes: file.size };
 
@@ -66,11 +77,17 @@ export async function prepareImageForUpload(
     });
 
     if (!blob || blob.size === 0) return fallback;
-    // Si la conversion n'apporte rien (image déjà très optimisée), on garde l'original.
-    if (blob.size >= file.size) return fallback;
+    // Si la conversion n'apporte rien (image déjà très optimisée), on garde
+    // l'original — sauf si le réencodage est demandé pour lui-même.
+    if (blob.size >= file.size && !forceReencode) return fallback;
 
     const name = file.name.replace(/\.[^.]+$/, "") || "photo";
-    const processed = new File([blob], `${name}.webp`, { type: "image/webp" });
+    // La date d'origine est conservée : elle sert de clé de dédoublonnage dans
+    // les formulaires.
+    const processed = new File([blob], `${name}.webp`, {
+      type: "image/webp",
+      lastModified: file.lastModified,
+    });
 
     return { file: processed, originalBytes: file.size, bytes: processed.size };
   } catch {
