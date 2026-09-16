@@ -37,7 +37,9 @@ export const metadata: Metadata = {
       "Des spots vérifiés autour de Toulouse pour préparer vos shootings photo moto.",
     images: ["/og.png"],
   },
-  robots: { index: false, follow: false },
+  // Le site est ouvert à l'indexation. Les pages privées (administration,
+  // espace personnel, formulaires) portent leur propre « noindex ».
+  robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {
