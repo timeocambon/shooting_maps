@@ -1,23 +1,32 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { Map as MapLibreMap, Marker } from "maplibre-gl";
+import type { Map as MapLibreMap } from "maplibre-gl";
+import { MapPin, Move } from "lucide-react";
 import { resolveMapStyle } from "@/features/maps/map-style";
 import { ensureMaplibreWorkerConfigured } from "@/features/maps/maplibre-worker";
 
 type LocationPickerProps = {
   latitude: number;
   longitude: number;
+  confirmed: boolean;
   onChange: (latitude: number, longitude: number) => void;
   styleUrl: string;
 };
 
-export function LocationPicker({ latitude, longitude, onChange, styleUrl }: LocationPickerProps) {
+export function LocationPicker({
+  latitude,
+  longitude,
+  confirmed,
+  onChange,
+  styleUrl,
+}: LocationPickerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
-  const markerRef = useRef<Marker | null>(null);
   const onChangeRef = useRef(onChange);
   const initialLocationRef = useRef({ latitude, longitude });
+  const programmaticMoveRef = useRef(false);
+  const readyForUserMoveRef = useRef(false);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -35,42 +44,82 @@ export function LocationPicker({ latitude, longitude, onChange, styleUrl }: Loca
         container: containerRef.current,
         style: resolveMapStyle(styleUrl),
         center: [initial.longitude, initial.latitude],
-        zoom: 11,
+        zoom: 14,
         attributionControl: false,
       });
-      const marker = new maplibregl.Marker({ color: "#e85b3d", draggable: true })
-        .setLngLat([initial.longitude, initial.latitude])
-        .addTo(map);
 
-      marker.on("dragend", () => {
-        const point = marker.getLngLat();
-        onChangeRef.current(Number(point.lat.toFixed(6)), Number(point.lng.toFixed(6)));
-      });
       map.on("click", (event) => {
-        marker.setLngLat(event.lngLat);
-        onChangeRef.current(Number(event.lngLat.lat.toFixed(6)), Number(event.lngLat.lng.toFixed(6)));
+        map.easeTo({ center: event.lngLat, duration: 260 });
+      });
+      map.on("moveend", () => {
+        if (!readyForUserMoveRef.current) return;
+        if (programmaticMoveRef.current) {
+          programmaticMoveRef.current = false;
+          return;
+        }
+        const center = map.getCenter();
+        onChangeRef.current(
+          Number(center.lat.toFixed(6)),
+          Number(center.lng.toFixed(6)),
+        );
       });
       map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
       map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
+      map.once("load", () => {
+        programmaticMoveRef.current = false;
+        readyForUserMoveRef.current = true;
+      });
       mapRef.current = map;
-      markerRef.current = marker;
     });
 
     return () => {
       cancelled = true;
+      readyForUserMoveRef.current = false;
       mapRef.current?.remove();
       mapRef.current = null;
-      markerRef.current = null;
     };
   }, [styleUrl]);
 
   useEffect(() => {
-    markerRef.current?.setLngLat([longitude, latitude]);
-    mapRef.current?.easeTo({
+    const map = mapRef.current;
+    if (!map) return;
+    const center = map.getCenter();
+    if (
+      Math.abs(center.lat - latitude) < 0.000001 &&
+      Math.abs(center.lng - longitude) < 0.000001
+    ) {
+      return;
+    }
+
+    programmaticMoveRef.current = true;
+    map.easeTo({
       center: [longitude, latitude],
-      zoom: Math.max(mapRef.current.getZoom(), 14),
+      zoom: Math.max(map.getZoom(), 16),
+      duration: 420,
     });
   }, [latitude, longitude]);
 
-  return <div ref={containerRef} className="location-picker" role="region" aria-label="Choisir la position du spot sur la carte" />;
+  return (
+    <div className="location-picker-shell">
+      <div
+        ref={containerRef}
+        className="location-picker"
+        role="region"
+        aria-label="Choisir la position du spot sur la carte"
+      />
+      <div className="location-picker-instruction" aria-hidden="true">
+        <Move size={15} /> Déplacez la carte sous le repère
+      </div>
+      <div
+        className={`location-picker-target${confirmed ? " is-confirmed" : ""}`}
+        aria-hidden="true"
+      >
+        <MapPin size={42} strokeWidth={2.4} />
+        <span />
+      </div>
+      <div className="location-picker-tip" aria-hidden="true">
+        La pointe indique la position exacte
+      </div>
+    </div>
+  );
 }
