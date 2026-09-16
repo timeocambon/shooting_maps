@@ -935,6 +935,12 @@ a { color: inherit; text-decoration: none; }
 .admin-card-actions { margin-top: auto; padding-top: 11px; border-top: 1px solid #eee9e2; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .admin-card-actions .text-decision { display: inline-flex; align-items: center; gap: 5px; }
 
+/* Zone de suppression définitive, volontairement mise à l'écart du formulaire */
+.danger-zone { margin: 34px 0 44px; padding: 20px; border: 1px solid #f0cfc6; border-radius: 16px; background: #fff6f3; }
+.danger-zone h2 { margin: 0 0 8px; font-family: Georgia, serif; font-size: 1.15rem; font-weight: 500; color: #a53a29; }
+.danger-zone p { margin: 0 0 14px; color: var(--muted); font-size: 0.84rem; }
+.danger-zone .form-error { margin-bottom: 12px; }
+
 /* Les contenus saisis par les visiteurs (e-mails, liens, avis) ne doivent
    jamais élargir la mise en page sur mobile. */
 .admin-content, .moderation-review-shell, .spot-detail, .review-list li p, .photographer-card-body { overflow-wrap: anywhere; }

@@ -4,9 +4,10 @@ import { ArrowRight, Camera, Eye, EyeOff, Mail, UserCheck } from "lucide-react";
 import { AdminSidebar } from "@/features/admin/components/admin-sidebar";
 import { getAdminSessionState } from "@/features/admin/admin-session";
 import { getAllPhotographers, type AdminPhotographerRow } from "@/features/admin/photographer-data";
-import { setPhotographerStateAction } from "@/app/admin/photographes/actions";
+import { deletePhotographerAction, setPhotographerStateAction } from "@/app/admin/photographes/actions";
+import { ConfirmSubmitButton } from "@/features/admin/components/confirm-submit-button";
 
-type PhotographersPageProps = { searchParams: Promise<{ decision?: string }> };
+type PhotographersPageProps = { searchParams: Promise<{ decision?: string; erreur?: string }> };
 
 export const metadata: Metadata = { title: "Photographes" };
 
@@ -73,6 +74,14 @@ function PhotographerCard({ photographer }: { photographer: AdminPhotographerRow
             Voir la page
           </a>
         ) : null}
+
+        <form action={deletePhotographerAction}>
+          <input type="hidden" name="photographerId" value={photographer.id} />
+          <ConfirmSubmitButton
+            label="Supprimer"
+            message={`Supprimer définitivement la fiche « ${photographer.name} », ses photos et ses avis ? Cette action est irréversible.`}
+          />
+        </form>
       </div>
     </article>
   );
@@ -84,7 +93,7 @@ export default async function AdminPhotographersPage({ searchParams }: Photograp
     return <main className="admin-gate"><section><p className="kicker">Accès protégé</p><h1>Authentification requise.</h1><Link className="button" href="/admin">Accéder à l&apos;administration</Link></section></main>;
   }
 
-  const { decision } = await searchParams;
+  const { decision, erreur } = await searchParams;
   const photographers = await getAllPhotographers();
   const pending = photographers.filter((item) => item.publicationState === "pending");
   const others = photographers.filter((item) => item.publicationState !== "pending");
@@ -97,7 +106,9 @@ export default async function AdminPhotographersPage({ searchParams }: Photograp
           <div><p className="kicker">Annuaire public</p><h1>Photographes</h1></div>
           <span className="role-chip">{pending.length} en attente · {photographers.length} au total</span>
         </header>
-        {decision ? <p className="success-message">La décision a été enregistrée.</p> : null}
+        {decision === "supprimee" ? <p className="success-message">La fiche a été supprimée définitivement.</p> : null}
+        {decision && decision !== "supprimee" ? <p className="success-message">La décision a été enregistrée.</p> : null}
+        {erreur ? <p className="form-error" role="alert">La suppression n’a pas pu être effectuée.</p> : null}
 
         <h2 className="admin-section-title">À examiner ({pending.length})</h2>
         {pending.length ? (

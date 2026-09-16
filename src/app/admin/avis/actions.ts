@@ -41,3 +41,28 @@ export async function reviewPhotographerReviewAction(formData: FormData) {
   revalidatePath("/photographes", "layout");
   redirect(`/admin/avis?decision=${parsed.data.moderationState}`);
 }
+
+const deleteSchema = z.object({ reviewId: z.uuid() });
+
+export async function deletePhotographerReviewAction(formData: FormData) {
+  const session = await getAdminSessionState();
+  if (session.status !== "authenticated") redirect("/admin");
+
+  const parsed = deleteSchema.safeParse({ reviewId: formData.get("reviewId") });
+  if (!parsed.success) redirect("/admin/avis?erreur=validation");
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("admin_delete_photographer_review", {
+    p_review_id: parsed.data.reviewId,
+  });
+
+  if (error) {
+    console.error("admin_delete_photographer_review", error.message);
+    redirect("/admin/avis?erreur=traitement");
+  }
+
+  revalidatePath("/admin/avis");
+  revalidatePath("/admin");
+  revalidatePath("/photographes", "layout");
+  redirect("/admin/avis?decision=supprime");
+}

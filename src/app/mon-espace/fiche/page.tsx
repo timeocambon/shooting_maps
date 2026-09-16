@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { PhotographerEditForm } from "@/features/account/components/photographer-edit-form";
+import { DeleteMyProfile } from "@/features/account/components/delete-my-profile";
 import { getAccountState, getMyPhotographerProfile } from "@/features/account/account-session";
 import { socialLinkSchema, type SocialLink } from "@/features/photographers/domain/photographer";
 
@@ -46,6 +47,11 @@ export default async function EditMyPhotographerPage() {
           locationLabel={photographer.locationLabel ?? ""}
           socials={parseSocials(photographer.socials)}
           photos={photographer.photos}
+        />
+
+        <DeleteMyProfile
+          photographerName={photographer.name}
+          photoIds={photographer.photos.map((photo) => photo.id)}
         />
 
         <SiteFooter />

@@ -696,6 +696,18 @@ export type Database = {
         Args: { p_object_path: string; p_public_url: string }
         Returns: string
       }
+      admin_delete_photographer: {
+        Args: { p_photographer_id: string }
+        Returns: string[]
+      }
+      admin_delete_photographer_review: {
+        Args: { p_review_id: string }
+        Returns: string
+      }
+      delete_my_photographer_profile: {
+        Args: never
+        Returns: string
+      }
       am_i_admin: {
         Args: never
         Returns: boolean

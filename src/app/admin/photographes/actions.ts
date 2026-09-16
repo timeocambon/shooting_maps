@@ -72,6 +72,37 @@ export async function setPhotographerPhotoStateAction(formData: FormData) {
   revalidatePath(`/admin/photographes/${parsed.data.photographerId}`);
 }
 
+const deleteSchema = z.object({ photographerId: z.uuid() });
+
+export async function deletePhotographerAction(formData: FormData) {
+  const session = await getAdminSessionState();
+  if (session.status !== "authenticated") redirect("/admin");
+
+  const parsed = deleteSchema.safeParse({ photographerId: formData.get("photographerId") });
+  if (!parsed.success) redirect("/admin/photographes?erreur=validation");
+
+  const supabase = await createSupabaseServerClient();
+  const { data: objectPaths, error } = await supabase.rpc("admin_delete_photographer", {
+    p_photographer_id: parsed.data.photographerId,
+  });
+
+  if (error) {
+    console.error("admin_delete_photographer", error.message);
+    redirect("/admin/photographes?erreur=suppression");
+  }
+
+  // Les fichiers ne partent pas avec la ligne : on les retire du stockage.
+  if (Array.isArray(objectPaths) && objectPaths.length) {
+    const { error: storageError } = await supabase.storage.from("photographer-photos").remove(objectPaths);
+    if (storageError) console.error("storage remove", storageError.message);
+  }
+
+  revalidatePath("/photographes", "layout");
+  revalidatePath("/admin");
+  revalidatePath("/admin/photographes");
+  redirect("/admin/photographes?decision=supprimee");
+}
+
 const stateSchema = z.object({
   photographerId: z.uuid(),
   state: z.enum(["published", "hidden"]),
