@@ -8,7 +8,13 @@ const nextConfig: NextConfig = {
     // Sans cette autorisation, next/image refuse les URL du stockage Supabase :
     // c'est la raison pour laquelle tout le site utilisait « unoptimized »,
     // donc servait les originaux en pleine résolution.
-    remotePatterns: [{ protocol: "https", hostname: "**.supabase.co", pathname: "/storage/v1/object/public/**" }],
+    remotePatterns: [
+      { protocol: "https", hostname: "**.supabase.co", pathname: "/storage/v1/object/public/**" },
+      // Photos des spots de démonstration : elles ne viennent pas du stockage
+      // Supabase. À retirer le jour où les données de démo disparaissent.
+      { protocol: "https", hostname: "picsum.photos" },
+      { protocol: "https", hostname: "fastly.picsum.photos" },
+    ],
     // Les chemins contiennent un identifiant unique : une photo publiée ne
     // change jamais. Un cache long évite de refacturer une transformation à
     // chaque expiration (le quota Vercel se compte en transformations).
