@@ -6,12 +6,7 @@ import { z } from "zod";
 import { isSupabaseConfigured } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export type AuthActionState =
-  | { status: "idle" }
-  | { status: "error"; message: string }
-  // Quand la confirmation d'adresse est activée dans Supabase, signUp ne rend
-  // aucune session : le compte n'existe vraiment qu'après le clic dans l'e-mail.
-  | { status: "confirmation-sent"; email: string };
+export type AuthActionState = { status: "idle" } | { status: "error"; message: string };
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://127.0.0.1:3000";
 
@@ -84,7 +79,7 @@ export async function signUpAction(
   // Aucune session : Supabase attend la confirmation de l'adresse. Inutile
   // d'appeler les RPC, elles s'exécuteraient en anonyme et échoueraient.
   if (!data.session) {
-    return { status: "confirmation-sent", email: parsed.data.email };
+    redirect("/compte/confirmation");
   }
 
   const { error: profileError } = await supabase.rpc("ensure_my_profile", {
