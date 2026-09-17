@@ -4,7 +4,10 @@ import { ArchiveX, ArrowLeft, ExternalLink, Save, ShieldCheck, Trash2 } from "lu
 import { notFound } from "next/navigation";
 import { changeSpotStateAction, deleteSpotAction, updateSpotAction } from "@/app/admin/spots/actions";
 import { getAdminSessionState } from "@/features/admin/admin-session";
-import { getCatalogSpot } from "@/features/admin/catalog-data";
+import { getCatalogSpot, getCatalogSpotPhotos } from "@/features/admin/catalog-data";
+import { SpotLocationField } from "@/features/admin/components/spot-location-field";
+import { SpotPhotoManager } from "@/features/admin/components/spot-photo-manager";
+import { getMapStyleUrl } from "@/lib/env";
 import { categoryLabels, spotCategories } from "@/features/spots/domain/spot";
 
 type EditSpotPageProps = {
@@ -56,6 +59,8 @@ export default async function EditSpotPage({ params, searchParams }: EditSpotPag
   const { erreur, maj } = await searchParams;
   const spot = await getCatalogSpot(id);
   if (!spot) notFound();
+  const photos = await getCatalogSpotPhotos(spot.id);
+  const mapStyleUrl = getMapStyleUrl();
   const updateAction = updateSpotAction.bind(null, spot.id);
   const stateAction = changeSpotStateAction.bind(null, spot.id);
   const deleteAction = deleteSpotAction.bind(null, spot.id);
@@ -81,8 +86,7 @@ export default async function EditSpotPage({ params, searchParams }: EditSpotPag
                 <label className="field-wide">Adresse <span>facultative si seules les coordonnées sont connues</span><input name="address" minLength={5} maxLength={240} autoComplete="street-address" defaultValue={spot.address} placeholder="12 rue Exemple, 31000 Toulouse" /></label>
                 <label>Commune<input name="municipality" defaultValue={spot.municipality} required /></label>
                 <label>Code postal<input name="postalCode" inputMode="numeric" pattern="[0-9]{5}" defaultValue={spot.postalCode} required /></label>
-                <label>Latitude<input name="latitude" type="number" step="0.000001" defaultValue={spot.latitude} required /></label>
-                <label>Longitude<input name="longitude" type="number" step="0.000001" defaultValue={spot.longitude} required /></label>
+                <SpotLocationField latitude={spot.latitude} longitude={spot.longitude} mapStyleUrl={mapStyleUrl} />
                 <label>Précision publique<select name="displayPrecision" defaultValue={spot.displayPrecision}><option value="exact">Exacte</option><option value="approximate">Approximative</option><option value="hidden">Coordonnées masquées</option></select></label>
                 <label>Statut du lieu<select name="locationStatus" defaultValue={spot.locationStatus}><option value="public">Public</option><option value="private_with_permission">Privé avec autorisation</option><option value="to_confirm">À confirmer</option><option value="sensitive">Sensible</option></select></label>
               </div>
@@ -115,6 +119,10 @@ export default async function EditSpotPage({ params, searchParams }: EditSpotPag
               <button className="button" type="submit"><Save size={17} /> Enregistrer la fiche</button>
             </div>
           </form>
+
+          {/* Hors du formulaire : chaque action photo est immédiate et ne doit
+              pas déclencher l'envoi de la fiche. */}
+          <SpotPhotoManager spotId={spot.id} photos={photos} />
 
           <aside className="decision-card catalog-state-card">
             <ShieldCheck />

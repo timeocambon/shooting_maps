@@ -934,6 +934,38 @@ export type Database = {
         Args: { p_address: string; p_spot_id: string }
         Returns: boolean
       }
+      admin_add_spot_photo: {
+        Args: {
+          p_alt_text?: string
+          p_object_path: string
+          p_public_url: string
+          p_spot_id: string
+        }
+        Returns: string
+      }
+      admin_delete_spot_photo: {
+        Args: { p_photo_id: string }
+        Returns: {
+          original_path: string | null
+          published_path: string | null
+        }[]
+      }
+      admin_list_spot_photos: {
+        Args: { p_spot_id: string }
+        Returns: {
+          alt_text: string | null
+          credit: string | null
+          display_order: number
+          id: string
+          moderation_state: string
+          public_url: string | null
+          published_object_path: string | null
+        }[]
+      }
+      admin_reorder_spot_photos: {
+        Args: { p_photo_ids: string[]; p_spot_id: string }
+        Returns: number
+      }
       admin_set_spot_photo_state: {
         Args: { p_moderation_state: string; p_photo_id: string }
         Returns: string

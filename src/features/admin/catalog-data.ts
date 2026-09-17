@@ -106,3 +106,27 @@ export async function getCatalogSpot(id: string): Promise<CatalogSpot | null> {
     updatedAt: row.updated_at,
   };
 }
+
+export type AdminSpotPhotoRow = {
+  id: string;
+  publicUrl: string | null;
+  publishedObjectPath: string | null;
+  displayOrder: number;
+  moderationState: string;
+  altText: string | null;
+};
+
+export async function getCatalogSpotPhotos(spotId: string): Promise<AdminSpotPhotoRow[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("admin_list_spot_photos", { p_spot_id: spotId });
+  if (error) throw error;
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    publicUrl: row.public_url,
+    publishedObjectPath: row.published_object_path,
+    displayOrder: Number(row.display_order),
+    moderationState: row.moderation_state,
+    altText: row.alt_text,
+  }));
+}
