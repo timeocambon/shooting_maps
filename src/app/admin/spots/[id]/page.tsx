@@ -120,9 +120,6 @@ export default async function EditSpotPage({ params, searchParams }: EditSpotPag
             </div>
           </form>
 
-          {/* Hors du formulaire : chaque action photo est immédiate et ne doit
-              pas déclencher l'envoi de la fiche. */}
-          <SpotPhotoManager spotId={spot.id} photos={photos} />
 
           <aside className="decision-card catalog-state-card">
             <ShieldCheck />
@@ -160,6 +157,11 @@ export default async function EditSpotPage({ params, searchParams }: EditSpotPag
               </details>
             ) : null}
           </aside>
+
+          {/* Hors du formulaire : chaque action photo est immédiate et ne doit
+              pas déclencher l'envoi de la fiche. Placé après l'encadré pour
+              que la grille garde « formulaire | encadré » sur la même ligne. */}
+          <SpotPhotoManager spotId={spot.id} photos={photos} />
         </div>
       </div>
     </main>

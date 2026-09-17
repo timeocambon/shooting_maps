@@ -1016,18 +1016,18 @@ a { color: inherit; text-decoration: none; }
 .spot-location-readout { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .spot-location-warning { grid-column: 1 / -1; margin: 0; color: var(--accent-dark); font-size: 0.72rem; font-weight: 700; }
 
-/* Le gestionnaire est le troisième enfant de la grille : il se range sous le
-   formulaire, dans la même colonne, et non sous la colonne latérale. */
-.admin-photo-manager { grid-column: 1; display: grid; gap: 13px; padding: clamp(20px, 4vw, 30px); border: 1px solid var(--line); border-radius: 18px; background: var(--paper-strong); }
+/* La galerie occupe toute la largeur sous les deux colonnes : des vignettes
+   sont plus lisibles larges qu'entassées dans la colonne du formulaire. */
+.admin-photo-manager { grid-column: 1 / -1; display: grid; gap: 13px; padding: clamp(20px, 4vw, 30px); border: 1px solid var(--line); border-radius: 18px; background: var(--paper-strong); }
 .admin-photo-manager header h2 { margin: 0; font-family: Georgia, serif; font-size: 1.25rem; font-weight: 500; }
 .admin-photo-manager header p { margin: 4px 0 0; color: var(--muted); font-size: 0.78rem; }
 .admin-photo-hint { margin: 0; color: var(--muted); font-size: 0.72rem; line-height: 1.55; }
 
 .admin-photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(192px, 1fr)); gap: 12px; }
 .admin-photo-item { position: relative; margin: 0; border: 1px solid var(--line); border-radius: 13px; overflow: hidden; background: #ece6dd; }
-.admin-photo-item img { display: block; width: 100%; height: 124px; object-fit: cover; }
+.admin-photo-item img { display: block; width: 100%; height: 148px; object-fit: cover; }
 .admin-photo-item.is-hidden img { opacity: 0.45; filter: grayscale(0.7); }
-.admin-photo-missing { display: grid; place-items: center; height: 124px; color: var(--muted); font-size: 0.7rem; }
+.admin-photo-missing { display: grid; place-items: center; height: 148px; padding: 10px; text-align: center; color: var(--muted); font-size: 0.7rem; }
 .admin-photo-item figcaption { position: absolute; top: 7px; left: 7px; display: flex; gap: 5px; }
 .admin-photo-badge { padding: 3px 8px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 0.62rem; font-weight: 800; }
 .admin-photo-badge.muted { background: rgba(29, 33, 29, 0.78); }
@@ -1037,7 +1037,7 @@ a { color: inherit; text-decoration: none; }
 .admin-photo-actions button:disabled { opacity: 0.4; cursor: not-allowed; }
 .admin-photo-actions button.danger:hover:not(:disabled) { border-color: #c0392b; color: #c0392b; }
 
-.admin-photo-add { display: grid; place-items: center; gap: 6px; min-height: 165px; padding: 14px; border: 1px dashed #c6bdb0; border-radius: 13px; color: var(--muted); font-size: 0.75rem; font-weight: 700; text-align: center; cursor: pointer; }
+.admin-photo-add { display: grid; place-items: center; gap: 6px; min-height: 190px; padding: 14px; border: 1px dashed #c6bdb0; border-radius: 13px; color: var(--muted); font-size: 0.75rem; font-weight: 700; text-align: center; cursor: pointer; }
 .admin-photo-add:hover { border-color: var(--accent); color: var(--accent-dark); }
 .admin-photo-add input { display: none; }
 
