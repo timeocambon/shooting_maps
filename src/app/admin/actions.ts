@@ -150,5 +150,7 @@ export async function createSpotAction(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/admin/spots");
   revalidatePath(`/spots/${slug}`);
-  redirect("/admin/spots?creation=1");
+  // Vers la fiche plutôt que le catalogue : les photos ne peuvent être
+  // ajoutées qu'une fois l'identifiant du spot connu.
+  redirect(`/admin/spots/${spotId}?maj=creation`);
 }

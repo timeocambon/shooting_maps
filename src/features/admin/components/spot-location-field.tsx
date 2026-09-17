@@ -61,7 +61,7 @@ export function SpotLocationField({ latitude, longitude, mapStyleUrl }: SpotLoca
         </label>
         {moved ? (
           <p className="spot-location-warning" role="status">
-            Point déplacé. Il ne sera enregistré qu’avec le bouton « Enregistrer la fiche ».
+            Point déplacé. Il ne sera enregistré qu’à la validation du formulaire.
           </p>
         ) : null}
       </div>

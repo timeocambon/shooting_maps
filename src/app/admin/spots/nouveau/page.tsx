@@ -2,6 +2,8 @@ import Link from "next/link";
 import { ArrowLeft, MapPinPlus } from "lucide-react";
 import { createSpotAction } from "@/app/admin/actions";
 import { getAdminSessionState } from "@/features/admin/admin-session";
+import { SpotLocationField } from "@/features/admin/components/spot-location-field";
+import { getMapStyleUrl } from "@/lib/env";
 
 type NewSpotPageProps = { searchParams: Promise<{ erreur?: string }> };
 
@@ -37,8 +39,7 @@ export default async function NewSpotPage({ searchParams }: NewSpotPageProps) {
               <label className="field-wide">Adresse <span>facultative si seules les coordonnées sont connues</span><input name="address" minLength={5} maxLength={240} autoComplete="street-address" placeholder="12 rue Exemple, 31000 Toulouse" /></label>
               <label>Commune<input name="municipality" defaultValue="Toulouse" required /></label>
               <label>Code postal<input name="postalCode" inputMode="numeric" pattern="[0-9]{5}" defaultValue="31000" required /></label>
-              <label>Latitude<input name="latitude" type="number" step="0.000001" defaultValue="43.6045" required /></label>
-              <label>Longitude<input name="longitude" type="number" step="0.000001" defaultValue="1.4442" required /></label>
+              <SpotLocationField latitude={43.6045} longitude={1.4442} mapStyleUrl={getMapStyleUrl()} />
               <label>Précision publique<select name="displayPrecision" defaultValue="exact"><option value="exact">Exacte</option><option value="approximate">Approximative</option></select></label>
               <label>Statut du lieu<select name="locationStatus" defaultValue="to_confirm"><option value="public">Public</option><option value="private_with_permission">Privé avec autorisation</option><option value="to_confirm">À confirmer</option><option value="sensitive">Sensible</option></select></label>
             </div>

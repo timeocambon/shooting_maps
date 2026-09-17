@@ -75,7 +75,7 @@ export default async function EditSpotPage({ params, searchParams }: EditSpotPag
           {publicSpotVisible ? <a className="button button-secondary" href={`/spots/${spot.slug}`} target="_blank" rel="noreferrer">Voir la fiche <ExternalLink size={14} /></a> : null}
         </header>
         {erreur ? <p className="form-error" role="alert">{errors[erreur] ?? errors.enregistrement}</p> : null}
-        {maj ? <p className="success-message">{maj === "etat" ? "Le nouvel état est appliqué et journalisé." : "La fiche a été mise à jour."}</p> : null}
+        {maj ? <p className="success-message">{maj === "etat" ? "Le nouvel état est appliqué et journalisé." : maj === "creation" ? "La fiche est créée et publiée. Vous pouvez maintenant ajouter ses photos." : "La fiche a été mise à jour."}</p> : null}
 
         <div className="catalog-edit-layout">
           <form className="spot-admin-form" action={updateAction}>
