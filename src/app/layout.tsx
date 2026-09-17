@@ -14,13 +14,13 @@ export const metadata: Metadata = {
     template: "%s · Spotride",
   },
   description:
-    "Des spots vérifiés autour de Toulouse pour préparer vos shootings photo moto.",
+    "Des spots vérifiés pour préparer vos shootings photo moto.",
   openGraph: {
     type: "website",
     locale: "fr_FR",
     title: "Spotride — Trouvez votre prochain décor",
     description:
-      "Des spots vérifiés autour de Toulouse pour préparer vos shootings photo moto.",
+      "Des spots vérifiés pour préparer vos shootings photo moto.",
     images: [
       {
         url: "/og.jpg",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Spotride — Trouvez votre prochain décor",
     description:
-      "Des spots vérifiés autour de Toulouse pour préparer vos shootings photo moto.",
+      "Des spots vérifiés pour préparer vos shootings photo moto.",
     images: ["/og.jpg"],
   },
   // Le site est ouvert à l'indexation. Les pages privées (administration,
