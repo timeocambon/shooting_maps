@@ -11,9 +11,9 @@ export default function LegalNoticePage() {
         <SiteHeader />
         <Link className="back-link" href="/"><ArrowLeft size={17} /> Retour à la carte</Link>
         <article className="simple-page prose-page">
-          <p className="kicker">Version de travail</p>
+          <p className="kicker">Informations légales</p>
           <h1>Mentions légales</h1>
-          <p className="lead">Cette page reflète le statut actuel du projet. Sa formulation devra être relue avant la bêta, mais son contenu correspond à la situation réelle : un projet personnel, sans activité économique.</p>
+          <p className="lead">Spotride est un projet personnel, sans activité économique. Cette page décrit qui édite le site, qui l’héberge, et comment nous contacter.</p>
 
           <h2>Éditeur du site</h2>
           <p>Ce site est édité par une personne physique agissant à titre non professionnel, sans activité économique, au sens de l’article 1-1 de la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l’économie numérique (anciennement article 6-III). À ce titre, l’identité complète de l’éditeur n’est pas rendue publique : elle a été communiquée à l’hébergeur du site, qui la tient à la disposition de l’autorité judiciaire en cas de besoin.</p>

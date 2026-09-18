@@ -8,7 +8,7 @@ import { getMapStyleUrl } from "@/lib/env";
 
 export const metadata: Metadata = {
   title: "Proposer un spot",
-  description: "Partagez un lieu adapté aux shootings photo moto autour de Toulouse.",
+  description: "Partagez un lieu adapté aux shootings photo moto.",
   robots: { index: false, follow: false },
 };
 

@@ -11,9 +11,9 @@ export default function CharterPage() {
         <SiteHeader />
         <Link className="back-link" href="/"><ArrowLeft size={17} /> Retour à la carte</Link>
         <article className="simple-page prose-page">
-          <p className="kicker">Version de travail</p>
+          <p className="kicker">Nos règles</p>
           <h1>Charte de contribution</h1>
-          <p className="lead">Cette page sert de repère pendant le développement. Son texte juridique et éditorial devra être validé avant la bêta.</p>
+          <p className="lead">Ce que Spotride attend de celles et ceux qui proposent un spot, et ce que nous nous engageons à faire de leurs contributions.</p>
           <h2>Contribuer avec soin</h2>
           <ul>
             <li>Ne proposer aucun accès fondé sur une intrusion ou une infraction.</li>

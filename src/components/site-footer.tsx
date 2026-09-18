@@ -3,7 +3,7 @@ import Link from "next/link";
 export function SiteFooter() {
   return (
     <footer className="site-footer">
-      <p>Spotride · MVP en développement</p>
+      <p>Spotride · La carte photo des motards</p>
       <nav aria-label="Liens secondaires">
         <Link href="/a-propos">Le projet</Link>
         <Link href="/photographes">Photographes</Link>
