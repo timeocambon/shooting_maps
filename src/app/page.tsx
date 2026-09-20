@@ -7,23 +7,14 @@ import { getMapStyleUrl } from "@/lib/env";
 
 export default async function HomePage() {
   const spots = await getPublishedSpots();
-  const usesDemoData = spots.some((spot) => spot.isDemo);
 
   return (
     <main>
       <div className="home-shell">
         <SiteHeader />
         <section className="hero">
-          <p className="kicker">La carte photo des motards toulousains</p>
+          <p className="kicker">La carte photo des motards</p>
         </section>
-
-        {usesDemoData ? (
-          <p className="demo-banner" role="status">
-            <strong>Socle de développement</strong>
-            Les trois fiches affichées sont fictives. Elles seront remplacées dès
-            que la base Supabase locale sera configurée.
-          </p>
-        ) : null}
 
         <Suspense fallback={<div className="explorer" aria-hidden="true" />}>
           <MapExplorer spots={spots} mapStyleUrl={getMapStyleUrl()} />
