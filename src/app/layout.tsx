@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import Script from "next/script";
-import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 import { getPlausibleDomain } from "@/lib/env";
 
