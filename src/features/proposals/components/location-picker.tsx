@@ -3,7 +3,6 @@
 import { useEffect, useRef } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { MapPin, Move } from "lucide-react";
-import "maplibre-gl/dist/maplibre-gl.css";
 import { resolveMapStyle } from "@/features/maps/map-style";
 import { ensureMaplibreWorkerConfigured } from "@/features/maps/maplibre-worker";
 

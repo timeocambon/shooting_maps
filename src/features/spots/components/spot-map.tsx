@@ -6,9 +6,6 @@ import type {
   Marker as MapLibreMarker,
 } from "maplibre-gl";
 import { Compass } from "lucide-react";
-// Importée ici plutôt que dans le layout : les pages sans carte (mentions
-// légales, annuaire…) n'ont plus à télécharger cette feuille de style.
-import "maplibre-gl/dist/maplibre-gl.css";
 import {
   DEFAULT_MAP_CENTER,
   DEFAULT_MAP_ZOOM,
@@ -102,36 +99,6 @@ export function SpotMap({
   const selectedSpotRef = useRef(selectedSpotId);
   const rafRef = useRef<number | null>(null);
 
-  // MapLibre pèse à lui seul plus de 250 Ko. Sur téléphone la carte est sous la
-  // liste, donc hors écran au chargement : inutile de la télécharger avant que
-  // le visiteur s'en approche.
-  const [shouldLoadMap, setShouldLoadMap] = useState(false);
-
-  useEffect(() => {
-    const node = containerRef.current;
-    if (!node) return;
-
-    if (typeof IntersectionObserver !== "function") {
-      setShouldLoadMap(true);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          setShouldLoadMap(true);
-          observer.disconnect();
-        }
-      },
-      // Marge d'avance : le téléchargement démarre avant que la carte
-      // n'entre réellement dans l'écran.
-      { rootMargin: "300px" },
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
   useEffect(() => {
     onSelectRef.current = onSelectSpot;
   }, [onSelectSpot]);
@@ -149,7 +116,7 @@ export function SpotMap({
   }, [selectedSpotId]);
 
   useEffect(() => {
-    if (!shouldLoadMap || !containerRef.current || mapRef.current) return;
+    if (!containerRef.current || mapRef.current) return;
 
     let cancelled = false;
     const markers = markersRef.current;
@@ -281,7 +248,7 @@ export function SpotMap({
     };
     // Le style et les positions initiales ne pilotent que la création de la carte.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [styleUrl, shouldLoadMap]);
+  }, [styleUrl]);
 
   useEffect(() => {
     syncMarkersRef.current?.(spots, selectedSpotId);
