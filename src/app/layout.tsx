@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import Script from "next/script";
+// Doit rester globale : sortie d'ici, MapLibre crée bien sa carte mais son
+// canvas n'est plus positionné et la carte reste vide.
+import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 import { getPlausibleDomain } from "@/lib/env";
 

@@ -6,9 +6,6 @@ import type {
   Marker as MapLibreMarker,
 } from "maplibre-gl";
 import { Compass } from "lucide-react";
-// Importée ici plutôt que dans le layout : les pages sans carte n'ont plus à
-// télécharger cette feuille de style, qui bloquait le premier affichage.
-import "maplibre-gl/dist/maplibre-gl.css";
 import {
   DEFAULT_MAP_CENTER,
   DEFAULT_MAP_ZOOM,
