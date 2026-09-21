@@ -257,7 +257,6 @@ export function MapExplorer({ spots, mapStyleUrl }: MapExplorerProps) {
           <strong>
             {filteredSpots.length} {filteredSpots.length > 1 ? "spots" : "spot"}
           </strong>
-          <span>autour de Toulouse</span>
         </div>
 
         <div className="spot-list">
