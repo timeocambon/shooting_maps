@@ -39,8 +39,15 @@ export default async function ConfirmationPage({ searchParams }: ConfirmationPag
               ? "L'équipe examinera l'accès, les risques, les photos et la précision de la position avant toute publication."
               : email === "echec"
                 ? "La proposition est enregistrée, mais l'e-mail n'a pas pu partir. Vous pouvez demander un nouveau lien ci-dessous."
-                : "Un lien temporaire vous a été envoyé. Il expire dans 24 heures et ne peut servir qu'une fois."}
+                : "Un lien de confirmation vient d'être envoyé à l'adresse que vous avez indiquée. Ouvrez-le pour que votre proposition parte en modération : sans ce clic, elle ne sera pas examinée."}
           </p>
+
+          {!isConfirmed ? (
+            <p className="confirmation-note">
+              Le lien expire dans 24 heures et ne peut servir qu&apos;une fois. Si le message
+              tarde, pensez à regarder dans vos indésirables.
+            </p>
+          ) : null}
 
           {suivi ? <div className="tracking-card"><span>Numéro de suivi</span><strong>{suivi}</strong><small>Conservez-le pour toute demande concernant votre contribution.</small></div> : null}
 

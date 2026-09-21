@@ -533,6 +533,7 @@ a { color: inherit; text-decoration: none; }
 .confirmation-page { width: min(760px, 100%); min-height: 670px; margin: 0 auto; padding: clamp(52px, 8vw, 100px) 0; display: flex; flex-direction: column; align-items: center; text-align: center; }
 .confirmation-page h1 { max-width: 720px; margin: 0; font-size: clamp(3rem, 7vw, 5.8rem); line-height: 0.94; }
 .confirmation-page .lead { max-width: 660px; margin: 23px 0 30px; color: var(--muted); line-height: 1.7; }
+.confirmation-note { max-width: 620px; margin: -14px 0 30px; color: var(--muted); font-size: 0.82rem; line-height: 1.65; }
 .confirmation-icon { width: 64px; height: 64px; margin-bottom: 28px; border-radius: 20px; display: grid; place-items: center; color: white; background: var(--accent); }
 .confirmation-icon.success { background: var(--moss); }
 .tracking-card { width: min(480px, 100%); margin-bottom: 22px; padding: 18px; border: 1px solid var(--line); border-radius: 15px; display: grid; background: var(--paper-strong); }
