@@ -5,6 +5,7 @@ export function SiteFooter() {
     <footer className="site-footer">
       <p>Spotride · La carte photo des motards</p>
       <nav aria-label="Liens secondaires">
+        <Link href="/comment-ca-marche">Comment ça marche</Link>
         <Link href="/a-propos">Le projet</Link>
         <Link href="/photographes">Photographes</Link>
         <Link href="/charte">Charte</Link>

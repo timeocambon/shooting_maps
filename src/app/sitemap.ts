@@ -12,6 +12,7 @@ export const revalidate = 3600;
 // « noindex » (administration, espace personnel, formulaires) en est exclu.
 const staticPaths = [
   "",
+  "/comment-ca-marche",
   "/photographes",
   "/a-propos",
   "/charte",
