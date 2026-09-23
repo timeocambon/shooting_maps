@@ -198,7 +198,7 @@ a { color: inherit; text-decoration: none; }
   display: block;
   background: #e7e1d7;
 }
-.spot-visual { aspect-ratio: 16 / 10; height: auto; }
+.spot-visual { aspect-ratio: 2 / 1; height: auto; }
 .spot-visual img { object-fit: cover; }
 
 /* Repli quand la fiche n'a pas encore de photo : une trame discrète aux
