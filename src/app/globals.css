@@ -190,29 +190,46 @@ a { color: inherit; text-decoration: none; }
   box-shadow: 0 0 0 3px rgba(232, 91, 61, 0.22), 0 12px 28px rgba(38, 31, 24, 0.16);
 }
 .spot-card-select { width: 100%; padding: 0; border: 0; display: block; background: none; cursor: pointer; }
+/* Une proportion plutôt qu'une hauteur fixe : le cadrage suit la largeur de
+   la carte et recadre beaucoup moins violemment les photos. */
 .spot-visual, .detail-visual {
   position: relative;
   overflow: hidden;
   display: block;
-  background:
-    linear-gradient(156deg, rgba(242, 188, 127, 0.78), transparent 44%),
-    linear-gradient(18deg, #27352e 0 27%, #667268 27% 35%, #d9d1c1 35% 58%, #82919a 58% 100%);
+  background: #e7e1d7;
 }
-.spot-visual { height: 108px; }
+.spot-visual { aspect-ratio: 16 / 10; height: auto; }
 .spot-visual img { object-fit: cover; }
-.spot-visual::before, .detail-visual::before {
+
+/* Repli quand la fiche n'a pas encore de photo : une trame discrète aux
+   couleurs du site, jamais une illustration qui pourrait passer pour la
+   photo du lieu. */
+.spot-visual-road {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(158deg, #efe9e0, #ded7cb);
+}
+/* Un repère de carte stylisé, dans l'orange du site : le visiteur comprend
+   qu'il s'agit d'un emplacement sans photo, pas d'une image cassée. */
+.spot-visual-road::before,
+.spot-visual-road::after {
   content: "";
   position: absolute;
-  width: 44%;
-  height: 120%;
-  top: 28%;
-  left: 42%;
-  border-left: 2px dashed rgba(255,255,255,0.75);
-  background: #3c403b;
-  transform: perspective(300px) rotateX(54deg) rotateZ(-9deg);
-  transform-origin: top;
+  top: 50%;
+  left: 50%;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
 }
-.spot-visual-road { position: absolute; inset: 0; background: radial-gradient(circle at 73% 20%, rgba(255, 228, 174, 0.9), transparent 16%); }
+.spot-visual-road::before {
+  width: 30px;
+  height: 30px;
+  border: 2px solid rgba(232, 91, 61, 0.34);
+}
+.spot-visual-road::after {
+  width: 8px;
+  height: 8px;
+  background: rgba(232, 91, 61, 0.42);
+}
 .demo-chip { position: absolute; top: 10px; right: 10px; padding: 5px 8px; border-radius: 7px; color: #362c20; background: rgba(255,250,244,0.9); font-size: 0.64rem; font-weight: 850; letter-spacing: 0.06em; text-transform: uppercase; backdrop-filter: blur(5px); }
 .spot-card-body { padding: 15px 16px 14px; }
 .eyebrow-row { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 0.67rem; font-weight: 750; text-transform: uppercase; letter-spacing: 0.07em; }
@@ -323,20 +340,21 @@ a { color: inherit; text-decoration: none; }
 .back-link { margin: 28px 0; display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 0.82rem; font-weight: 700; }
 .back-link:hover { color: var(--accent-dark); }
 .spot-detail { padding-bottom: 30px; }
-.detail-visual { min-height: clamp(260px, 47vw, 520px); border-radius: 24px; box-shadow: var(--shadow); }
+.detail-visual { aspect-ratio: 16 / 9; min-height: 0; border-radius: 24px; box-shadow: var(--shadow); }
 
 /* Galerie photo : le nombre de vignettes visibles pilote la grille (data-count),
    pensée pour ne jamais laisser de case vide, quel que soit le nombre de photos. */
-.detail-gallery { min-height: clamp(260px, 47vw, 520px); display: grid; gap: 8px; border-radius: 24px; overflow: hidden; box-shadow: var(--shadow); background: #d6d0c8; }
+.detail-gallery { min-height: clamp(230px, 32vw, 430px); display: grid; gap: 8px; border-radius: 24px; overflow: hidden; box-shadow: var(--shadow); background: #d6d0c8; }
 .detail-gallery[data-count="1"] { grid-template-columns: 1fr; }
-.detail-gallery[data-count="2"] { grid-template-columns: 1fr 1fr; }
+/* Une photo mise en avant, l'autre en appui : plus lisible que deux moitiés identiques. */
+.detail-gallery[data-count="2"] { grid-template-columns: 3fr 2fr; }
 .detail-gallery[data-count="3"] { grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr; }
 .detail-gallery[data-count="3"] .gallery-tile:first-child { grid-row: span 2; }
 .detail-gallery[data-count="4"] { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
 .detail-gallery[data-count="5"] { grid-template-columns: 2fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
 .detail-gallery[data-count="5"] .gallery-tile:first-child { grid-row: span 2; }
 .detail-gallery.single { display: block; }
-.detail-gallery.single .gallery-tile { max-height: 620px; }
+.detail-gallery.single .gallery-tile { max-height: 520px; }
 
 .gallery-tile { position: relative; display: block; width: 100%; height: 100%; min-height: 0; padding: 0; border: 0; background: none; cursor: zoom-in; overflow: hidden; }
 .gallery-tile img { width: 100%; height: 100%; min-height: 0; object-fit: cover; display: block; transition: transform 0.35s ease; }
