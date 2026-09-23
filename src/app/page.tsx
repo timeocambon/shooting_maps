@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { HowtoHint } from "@/components/howto-hint";
 import { MapExplorer } from "@/features/spots/components/map-explorer";
 import { getPublishedSpots } from "@/features/spots/data/spot-repository";
 import { getMapStyleUrl } from "@/lib/env";
@@ -15,6 +16,8 @@ export default async function HomePage() {
         <section className="hero">
           <p className="kicker">La carte photo des motards</p>
         </section>
+
+        <HowtoHint />
 
         <Suspense fallback={<div className="explorer" aria-hidden="true" />}>
           <MapExplorer spots={spots} mapStyleUrl={getMapStyleUrl()} />
