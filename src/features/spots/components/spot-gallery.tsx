@@ -9,8 +9,6 @@ type SpotGalleryProps = {
   spotName: string;
 };
 
-const MAX_TILES = 5;
-
 export function SpotGallery({ photoUrls, spotName }: SpotGalleryProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
@@ -47,43 +45,43 @@ export function SpotGallery({ photoUrls, spotName }: SpotGalleryProps) {
   if (!photoUrls.length) return null;
 
   const count = photoUrls.length;
-  const shownTiles = photoUrls.slice(0, MAX_TILES);
-  const hiddenCount = count - shownTiles.length;
 
   return (
     <>
+      {/* Bande défilante : chaque photo garde sa largeur naturelle pour une
+          hauteur commune, donc un portrait reste un portrait et rien n'est
+          recadré arbitrairement. */}
       <section
-        className={`detail-gallery${count === 1 ? " single" : ""}`}
-        data-count={shownTiles.length}
+        className="detail-strip"
         aria-label={`Galerie photo de ${spotName} (${count} photo${count > 1 ? "s" : ""})`}
       >
-        {shownTiles.map((url, index) => {
-          const isLastTile = index === shownTiles.length - 1;
-          return (
-            <button
-              key={url}
-              type="button"
-              className="gallery-tile"
-              onClick={() => setOpenIndex(index)}
-            >
-              <Image
-                width={1600}
-                height={1200}
-                sizes={index === 0 ? "(max-width: 1180px) 100vw, 780px" : "(max-width: 620px) 100vw, 390px"}
-                src={url}
-                alt={`Vue ${index + 1} du spot ${spotName}`}
-                priority={index === 0}
-              />
-              {isLastTile && hiddenCount > 0 ? (
-                <span className="gallery-more">+{hiddenCount}</span>
-              ) : (
-                <span className="gallery-expand" aria-hidden="true">
+        <ul>
+          {photoUrls.map((url, index) => (
+            <li key={url}>
+              <button
+                type="button"
+                className="strip-tile"
+                onClick={() => setOpenIndex(index)}
+                aria-label={`Agrandir la vue ${index + 1} sur ${count}`}
+              >
+                <Image
+                  width={1200}
+                  height={1500}
+                  sizes="(max-width: 620px) 80vw, 520px"
+                  src={url}
+                  alt={`Vue ${index + 1} du spot ${spotName}`}
+                  priority={index === 0}
+                />
+                <span className="strip-expand" aria-hidden="true">
                   <Expand size={16} />
                 </span>
-              )}
-            </button>
-          );
-        })}
+              </button>
+            </li>
+          ))}
+        </ul>
+        {count > 1 ? (
+          <p className="strip-hint">{count} photos · faites défiler pour les voir toutes</p>
+        ) : null}
       </section>
 
       {openIndex !== null ? (
