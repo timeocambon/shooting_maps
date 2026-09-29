@@ -12,6 +12,7 @@ import {
   createWithdrawalRequestAction,
   type WithdrawalActionState,
 } from "@/app/demande-de-retrait/actions";
+import { PrivacyNotice } from "@/components/privacy-notice";
 
 const initialState: WithdrawalActionState = { status: "idle" };
 
@@ -79,6 +80,11 @@ export function WithdrawalForm() {
       </label>
 
       {state.status === "error" ? <p className="form-error" role="alert">{state.message}</p> : null}
+
+      <PrivacyNotice
+        purpose="Votre adresse e-mail et votre message servent uniquement à instruire votre demande et à vous répondre."
+        retention="Ils sont conservés le temps du traitement, puis archivés à des fins de preuve."
+      />
 
       <div className="publish-row">
         <p>Ces informations ne sont utilisées que pour traiter votre demande et ne sont jamais affichées publiquement.</p>

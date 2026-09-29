@@ -9,6 +9,8 @@ export function SiteFooter() {
         <Link href="/a-propos">Le projet</Link>
         <Link href="/photographes">Photographes</Link>
         <Link href="/charte">Charte</Link>
+        <Link href="/conditions-generales">CGU</Link>
+        <Link href="/cookies">Cookies</Link>
         <Link href="/confidentialite">Confidentialité</Link>
         <Link href="/mentions-legales">Mentions légales</Link>
         <Link href="/demande-de-retrait">Demande de retrait</Link>

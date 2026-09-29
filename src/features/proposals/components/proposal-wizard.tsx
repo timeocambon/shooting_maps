@@ -25,6 +25,7 @@ import {
 } from "@/features/spots/domain/spot";
 import { createSupabasePublicBrowserClient } from "@/lib/supabase/public-browser";
 import { prepareImageForUpload } from "@/lib/image-processing";
+import { PrivacyNotice } from "@/components/privacy-notice";
 
 const DRAFT_KEY = "spotride:proposal-draft:v1";
 const DRAFT_TTL = 7 * 24 * 60 * 60 * 1000;
@@ -150,6 +151,22 @@ function readImageDimensions(file: File): Promise<{ width: number; height: numbe
   });
 }
 
+const DEFAULT_LATITUDE = 43.6045;
+const DEFAULT_LONGITUDE = 1.4442;
+
+/**
+ * Une coordonnée hors bornes fait lever une exception à MapLibre, et cette
+ * exception emporte toute la page. Le brouillon étant conservé sept jours dans
+ * le navigateur, une valeur aberrante rendrait le formulaire inutilisable
+ * jusqu'à son expiration : on lui substitue le centre par défaut.
+ */
+function safeCoordinate(value: unknown, maxAbsolute: number, fallback: number): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed === 0) return fallback;
+  if (Math.abs(parsed) > maxAbsolute) return fallback;
+  return parsed;
+}
+
 function isDraft(value: unknown): value is Draft {
   return Boolean(value && typeof value === "object" && "name" in value && "latitude" in value);
 }
@@ -190,7 +207,14 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
         if (raw) {
           const saved = JSON.parse(raw) as { expiresAt?: number; value?: unknown };
           if (saved.expiresAt && saved.expiresAt > Date.now() && isDraft(saved.value)) {
-            setDraft({ ...initialDraft, ...saved.value });
+            const restored = { ...initialDraft, ...saved.value };
+            setDraft({
+              ...restored,
+              // Le brouillon est relu tel qu'il a été écrit : ses coordonnées
+              // sont vérifiées avant de pouvoir atteindre la carte.
+              latitude: String(safeCoordinate(restored.latitude, 90, DEFAULT_LATITUDE)),
+              longitude: String(safeCoordinate(restored.longitude, 180, DEFAULT_LONGITUDE)),
+            });
           } else {
             window.localStorage.removeItem(DRAFT_KEY);
           }
@@ -742,8 +766,8 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
               </div>
               <div className="location-workspace">
                 <LocationPicker
-                  latitude={Number(draft.latitude) || 43.6045}
-                  longitude={Number(draft.longitude) || 1.4442}
+                  latitude={safeCoordinate(draft.latitude, 90, DEFAULT_LATITUDE)}
+                  longitude={safeCoordinate(draft.longitude, 180, DEFAULT_LONGITUDE)}
                   confirmed={draft.locationConfirmed}
                   onChange={(latitude, longitude) => {
                     setDraft((current) => ({
@@ -865,8 +889,12 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
               </div>
               <div className="consent-list">
                 <label className="check-row"><input type="checkbox" checked={draft.charterAccepted} onChange={(event) => update("charterAccepted", event.target.checked)} /><span>J&apos;accepte la <a href="/charte" target="_blank">charte de contribution</a>.</span></label>
-                <label className="check-row"><input type="checkbox" checked={draft.termsAccepted} onChange={(event) => update("termsAccepted", event.target.checked)} /><span>J&apos;autorise Spotride à examiner, adapter et publier cette contribution.</span></label>
+                <label className="check-row"><input type="checkbox" checked={draft.termsAccepted} onChange={(event) => update("termsAccepted", event.target.checked)} /><span>J&apos;autorise Spotride à examiner, adapter et publier cette contribution, dans les conditions prévues par les <a href="/conditions-generales" target="_blank">CGU</a>.</span></label>
                 <label className="check-row"><input type="checkbox" checked={draft.privacyAccepted} onChange={(event) => update("privacyAccepted", event.target.checked)} /><span>J&apos;ai compris que mon e-mail sert uniquement au suivi et à la modération.</span></label>
+                <PrivacyNotice
+                  purpose="Votre adresse e-mail sert à confirmer l’envoi, à suivre la proposition et à vous recontacter si une précision manque ; elle n’est jamais publiée."
+                  retention="Une proposition non confirmée est supprimée au bout de 30 jours, une proposition refusée ou classée 90 jours après sa clôture."
+                />
               </div>
               <label className="honeypot" aria-hidden="true">Site web<input tabIndex={-1} autoComplete="off" value={website} onChange={(event) => setWebsite(event.target.value)} /></label>
             </fieldset>
@@ -875,7 +903,7 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
           {errors.length ? <div className="wizard-errors" role="alert"><strong>Vérifiez cette étape :</strong><ul>{errors.map((error) => <li key={error}>{error}</li>)}</ul></div> : null}
           <div className="wizard-actions">
             {step > 0 ? <button className="button button-secondary" type="button" onClick={() => { setErrors([]); setStep((current) => current - 1); }}><ArrowLeft size={17} /> Précédent</button> : <span />}
-            {step < 4 ? <button className="button" type="button" onClick={continueToNextStep}>Continuer <ArrowRight size={17} /></button> : <button className="button" type="button" disabled={submitting} onClick={submitProposal}>{submitting ? <><LoaderCircle className="spin" size={17} /> {submitStage || "Envoi sécurisé…"}</> : "Envoyer et confirmer mon e-mail"}</button>}
+            {step < 4 ? <button className="button" type="button" onClick={continueToNextStep}>Continuer <ArrowRight size={17} /></button> : <button className="button" type="button" disabled={submitting} onClick={submitProposal}>{submitting ? <><LoaderCircle className="spin" size={17} /> {submitStage || "Envoi en cours…"}</> : "Envoyer et confirmer mon e-mail"}</button>}
           </div>
         </div>
 

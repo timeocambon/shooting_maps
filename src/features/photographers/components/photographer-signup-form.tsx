@@ -13,6 +13,7 @@ import {
 // créée lui appartient immédiatement (owner_user_id).
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { prepareImageForUpload } from "@/lib/image-processing";
+import { PrivacyNotice } from "@/components/privacy-notice";
 
 const MAX_PHOTOS = 6;
 const MAX_PHOTO_BYTES = 6 * 1024 * 1024;
@@ -40,6 +41,7 @@ export function PhotographerSignupForm() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [rightsDeclared, setRightsDeclared] = useState(false);
 
   function updateSocial(index: number, patch: Partial<SocialRow>) {
     setSocials((current) => current.map((row, i) => (i === index ? { ...row, ...patch } : row)));
@@ -102,6 +104,13 @@ export function PhotographerSignupForm() {
 
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "Certains champs sont incomplets.");
+      return;
+    }
+
+    // Les photos d'un photographe sont son travail : la déclaration de droits
+    // doit être explicite, comme elle l'est déjà pour les propositions de spot.
+    if (photos.length > 0 && !rightsDeclared) {
+      setError("Confirmez que vous détenez les droits de diffusion des photos envoyées.");
       return;
     }
 
@@ -264,6 +273,25 @@ export function PhotographerSignupForm() {
       </label>
 
       {error ? <p className="form-error" role="alert">{error}</p> : null}
+
+      <PrivacyNotice
+        purpose="Votre adresse e-mail sert uniquement à vous recontacter au sujet de votre fiche ; les autres informations sont destinées à être publiées dans l’annuaire."
+        retention="Elles sont conservées tant que votre fiche est en ligne."
+      />
+
+      {photos.length > 0 ? (
+        <label className="check-row">
+          <input
+            type="checkbox"
+            checked={rightsDeclared}
+            onChange={(event) => setRightsDeclared(event.target.checked)}
+          />
+          <span>
+            Je détiens les droits de diffusion des photos envoyées, et aucune personne
+            reconnaissable n’y apparaît sans son accord.
+          </span>
+        </label>
+      ) : null}
 
       <div className="publish-row">
         <p>Votre profil est vérifié avant de devenir visible dans l’annuaire.</p>

@@ -7,6 +7,7 @@ import {
   signUpAction,
   type AuthActionState,
 } from "@/app/compte/actions";
+import { PrivacyNotice } from "@/components/privacy-notice";
 
 const initialState: AuthActionState = { status: "idle" };
 
@@ -68,6 +69,11 @@ function SignUpForm() {
       </label>
 
       {state.status === "error" ? <p className="form-error" role="alert">{state.message}</p> : null}
+
+      <PrivacyNotice
+        purpose="Votre adresse e-mail identifie votre compte et sert à en confirmer la création ; le nom choisi s’affiche dans votre espace."
+        retention="Ces données sont conservées jusqu’à la suppression de votre compte, que vous pouvez demander à tout moment depuis votre espace."
+      />
 
       <div className="publish-row">
         <p>Un compte vous permet de gérer votre fiche photographe.</p>

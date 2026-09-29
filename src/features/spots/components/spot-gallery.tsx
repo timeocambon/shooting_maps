@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, Expand, X } from "lucide-react";
 
@@ -11,6 +11,11 @@ type SpotGalleryProps = {
 
 export function SpotGallery({ photoUrls, spotName }: SpotGalleryProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  // Au clavier, ouvrir la visionneuse doit y amener le focus, et la fermer doit
+  // le ramener sur la vignette d'origine : sans cela, la tabulation repart du
+  // haut de la page.
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const lastTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   const close = useCallback(() => setOpenIndex(null), []);
 
@@ -27,8 +32,13 @@ export function SpotGallery({ photoUrls, spotName }: SpotGalleryProps) {
   }, [photoUrls.length]);
 
   useEffect(() => {
-    if (openIndex === null) return;
+    if (openIndex === null) {
+      lastTriggerRef.current?.focus();
+      lastTriggerRef.current = null;
+      return;
+    }
 
+    closeButtonRef.current?.focus();
     document.body.style.overflow = "hidden";
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") close();
@@ -61,7 +71,10 @@ export function SpotGallery({ photoUrls, spotName }: SpotGalleryProps) {
               <button
                 type="button"
                 className="strip-tile"
-                onClick={() => setOpenIndex(index)}
+                onClick={(event) => {
+                  lastTriggerRef.current = event.currentTarget;
+                  setOpenIndex(index);
+                }}
                 aria-label={`Agrandir la vue ${index + 1} sur ${count}`}
               >
                 <Image
@@ -92,7 +105,13 @@ export function SpotGallery({ photoUrls, spotName }: SpotGalleryProps) {
           aria-label={`Photo ${openIndex + 1} sur ${count} — ${spotName}`}
           onClick={close}
         >
-          <button type="button" className="spot-lightbox-close" onClick={close} aria-label="Fermer la photo">
+          <button
+            type="button"
+            className="spot-lightbox-close"
+            onClick={close}
+            aria-label="Fermer la photo"
+            ref={closeButtonRef}
+          >
             <X size={20} />
           </button>
           <div className="spot-lightbox-inner" onClick={(event) => event.stopPropagation()}>

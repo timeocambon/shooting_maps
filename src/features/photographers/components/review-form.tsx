@@ -6,6 +6,7 @@ import {
   createPhotographerReviewAction,
   type PhotographerReviewActionState,
 } from "@/app/photographes/[slug]/actions";
+import { PrivacyNotice } from "@/components/privacy-notice";
 
 const initialState: PhotographerReviewActionState = { status: "idle" };
 
@@ -77,6 +78,11 @@ export function ReviewForm({ photographerId, photographerSlug, photographerName 
       </label>
 
       {state.status === "error" ? <p className="form-error" role="alert">{state.message}</p> : null}
+
+      <PrivacyNotice
+        purpose="Le prénom et l’avis sont publiés ; l’adresse e-mail, facultative, n’est visible que par la modération et sert à vous recontacter en cas de contestation."
+        retention="Ces données sont conservées tant que l’avis reste publié."
+      />
 
       <div className="publish-row">
         <p>Les avis sont vérifiés avant publication pour éviter le spam et les abus.</p>

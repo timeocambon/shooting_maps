@@ -49,6 +49,7 @@ export default function PrivacyPage() {
 
           <h2>Hébergement</h2>
           <p>Les données sont hébergées chez Supabase (base de données et fichiers) et l’application est servie par Vercel. Les e-mails de confirmation de compte sont acheminés par Brevo, qui reçoit à cette seule fin l’adresse du destinataire. Aucune revente ni partage commercial des données personnelles n’est pratiqué.</p>
+          <p>Les fonds de carte proviennent d’OpenStreetMap : votre navigateur contacte directement ses serveurs, qui reçoivent alors votre adresse IP. C’est le fonctionnement normal d’un site web et non un traceur ; le détail figure dans la <Link href="/cookies">politique relative aux cookies</Link>.</p>
         </article>
       </div>
     </main>
