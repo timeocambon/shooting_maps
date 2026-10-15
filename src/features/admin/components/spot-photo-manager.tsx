@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Star, Trash2, Upload } from "lucide-react";
+import { revalidateSpotPublicPagesAction } from "@/app/admin/spots/actions";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { prepareImageForUpload } from "@/lib/image-processing";
 
@@ -34,6 +35,9 @@ export function SpotPhotoManager({ spotId, photos }: SpotPhotoManagerProps) {
     setError(null);
     try {
       await task();
+      // Purge le cache des pages publiques (accueil + fiche) : router.refresh()
+      // ne rafraîchit que cette page d'admin, dans ce navigateur.
+      await revalidateSpotPublicPagesAction(spotId);
       router.refresh();
     } catch (cause) {
       console.error("[SpotPhotoManager]", cause);

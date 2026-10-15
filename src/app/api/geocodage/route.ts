@@ -20,21 +20,53 @@ const geocodingResponseSchema = z.object({
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
-  const address = new URL(request.url).searchParams.get("adresse")?.trim() ?? "";
+  const requestUrl = new URL(request.url);
+  const address = requestUrl.searchParams.get("adresse")?.trim() ?? "";
+  const latitudeParam = requestUrl.searchParams.get("latitude");
+  const longitudeParam = requestUrl.searchParams.get("longitude");
+  const latitude = Number(latitudeParam);
+  const longitude = Number(longitudeParam);
+  const isReverseLookup =
+    latitudeParam !== null &&
+    longitudeParam !== null &&
+    Number.isFinite(latitude) &&
+    latitude >= -90 &&
+    latitude <= 90 &&
+    Number.isFinite(longitude) &&
+    longitude >= -180 &&
+    longitude <= 180;
 
-  if (address.length < 5 || address.length > 180) {
+  if (!isReverseLookup && (address.length < 5 || address.length > 180)) {
     return Response.json(
       { ok: false, message: "Saisissez une adresse suffisamment précise." },
       { status: 400 },
     );
   }
 
-  const endpoint = new URL("https://data.geopf.fr/geocodage/search");
-  endpoint.searchParams.set("q", address);
+  const endpoint = new URL(
+    isReverseLookup
+      ? "https://data.geopf.fr/geocodage/reverse"
+      : "https://data.geopf.fr/geocodage/search",
+  );
   endpoint.searchParams.set("index", "address");
-  endpoint.searchParams.set("limit", "5");
-  endpoint.searchParams.set("lat", "43.6045");
-  endpoint.searchParams.set("lon", "1.4442");
+  endpoint.searchParams.set("limit", isReverseLookup ? "1" : "5");
+
+  if (isReverseLookup) {
+    endpoint.searchParams.set("lat", String(latitude));
+    endpoint.searchParams.set("lon", String(longitude));
+    endpoint.searchParams.set(
+      "searchgeom",
+      JSON.stringify({
+        type: "Circle",
+        coordinates: [longitude, latitude],
+        radius: 100,
+      }),
+    );
+  } else {
+    endpoint.searchParams.set("q", address);
+    endpoint.searchParams.set("lat", "43.6045");
+    endpoint.searchParams.set("lon", "1.4442");
+  }
 
   try {
     const response = await fetch(endpoint, {
@@ -65,7 +97,7 @@ export async function GET(request: Request) {
       {
         ok: false,
         message:
-          "La recherche d’adresse est momentanément indisponible. Vous pouvez placer le repère manuellement.",
+          "La recherche d’adresse est momentanément indisponible. Vous pouvez toujours placer le repère manuellement.",
       },
       { status: 502 },
     );

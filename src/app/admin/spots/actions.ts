@@ -191,3 +191,29 @@ export async function deleteSpotAction(spotId: string, formData: FormData) {
   revalidatePath("/admin/spots");
   redirect("/admin/spots?suppression=1");
 }
+
+// Le gestionnaire de photos écrit directement en base depuis le navigateur
+// (RPC Supabase). `router.refresh()` ne rafraîchit que la page d'admin du
+// navigateur courant : sans cet appel, les pages publiques restent servies
+// depuis le cache de Vercel et les photos n'apparaissent jamais en ligne.
+export async function revalidateSpotPublicPagesAction(spotId: string) {
+  const session = await getAdminSessionState();
+  if (session.status !== "authenticated") return;
+
+  const parsed = z.uuid().safeParse(spotId);
+  if (!parsed.success) return;
+
+  // Le slug est relu côté serveur : il ne vient pas du client, qui pourrait
+  // demander la purge de n'importe quel chemin.
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("spots")
+    .select("slug")
+    .eq("id", parsed.data)
+    .maybeSingle();
+
+  revalidatePath("/");
+  revalidatePath("/admin/spots");
+  revalidatePath(`/admin/spots/${parsed.data}`);
+  if (data?.slug) revalidatePath(`/spots/${data.slug}`);
+}
