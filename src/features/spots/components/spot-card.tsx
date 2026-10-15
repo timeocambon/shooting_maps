@@ -45,7 +45,6 @@ export function SpotCard({ spot, selected, onSelect }: SpotCardProps) {
           {spot.municipality}
           {spot.displayPrecision === "approximate" ? " · zone approximative" : ""}
         </p>
-        <p className="spot-description">{spot.shortDescription}</p>
         <div className="spot-card-footer">
           <span>
             <Clock3 size={15} aria-hidden="true" />
