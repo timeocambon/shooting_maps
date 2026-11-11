@@ -33,7 +33,11 @@ export async function processProposalImage(
   let metadata: Metadata;
   try {
     metadata = await sharp(bytes, {
-      failOn: "warning",
+      // Certains encodeurs mobiles produisent un JPEG décodable mais privé de
+      // son marqueur de fin ou accompagné d'un avertissement bénin. Sharp sait
+      // reconstruire ces pixels avec `none`; les contenus réellement
+      // indécodables échouent toujours et la variante publiée est réencodée.
+      failOn: "none",
       limitInputPixels: MAX_PIXELS,
     }).metadata();
   } catch {
@@ -56,7 +60,7 @@ export async function processProposalImage(
   if (dimensions !== "ok") throw new Error("image_too_small");
 
   const processedBytes = await sharp(bytes, {
-    failOn: "warning",
+    failOn: "none",
     limitInputPixels: MAX_PIXELS,
   })
     // Orientation EXIF appliquée, ratio conservé, aucun agrandissement ;

@@ -82,4 +82,23 @@ describe("processProposalImage", () => {
 
     await expect(processProposalImage(source)).rejects.toThrow("image_too_small");
   });
+
+  it("récupère un JPEG mobile décodable auquel il manque le marqueur de fin", async () => {
+    const source = await image(1200, 800);
+    const withoutEndMarker = source.subarray(0, source.length - 2);
+
+    const result = await processProposalImage(withoutEndMarker);
+    const metadata = await sharp(result.processedBytes).metadata();
+
+    expect(result.detectedMimeType).toBe("image/jpeg");
+    expect([result.width, result.height]).toEqual([1200, 800]);
+    expect([metadata.width, metadata.height]).toEqual([1200, 800]);
+    expect(metadata.format).toBe("webp");
+  });
+
+  it("continue de refuser un contenu réellement illisible", async () => {
+    await expect(processProposalImage(Buffer.from("pas une image"))).rejects.toThrow(
+      "invalid_image_content",
+    );
+  });
 });
