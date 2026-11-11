@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, ExternalLink, MapPin, ShieldAlert } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ExternalLink, MapPin, MessageSquareReply, ShieldAlert } from "lucide-react";
 import { notFound } from "next/navigation";
 import { reviewProposalAction } from "@/app/admin/propositions/actions";
 import { getAdminSessionState } from "@/features/admin/admin-session";
@@ -18,10 +18,15 @@ const errors: Record<string, string> = {
   photos: "La proposition doit contenir entre deux et six photos traitées.",
   "publication-photos": "Les variantes publiques n'ont pas pu être préparées.",
   "deja-traitee": "Cette proposition a déjà été traitée dans une autre session.",
+  "message-public": "Une demande de précisions nécessite un message au contributeur (2 000 caractères maximum).",
   decision: "La décision n'a pas pu être enregistrée.",
 };
 
 export const metadata: Metadata = { title: "Examiner une proposition" };
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+}
 
 export default async function ProposalPage({ params, searchParams }: ProposalPageProps) {
   const session = await getAdminSessionState();
@@ -42,6 +47,7 @@ export default async function ProposalPage({ params, searchParams }: ProposalPag
         <Link className="back-link" href="/admin/propositions"><ArrowLeft size={17} /> File de modération</Link>
         <header className="review-heading"><div><p className="kicker">{proposal.trackingId}</p><h1>{proposal.payload.name}</h1><p>{proposal.payload.municipality} · proposition de {proposal.publicPseudonym || proposal.contributorEmail}</p></div><a className="button button-secondary" href={mapUrl} target="_blank" rel="noreferrer"><MapPin size={17} /> Vérifier la position <ExternalLink size={14} /></a></header>
         {erreur ? <p className="form-error" role="alert">{errors[erreur] ?? errors.decision}</p> : null}
+        {proposal.hasNewResponse ? <p className="success-message exchange-alert" role="status"><MessageSquareReply size={16} /> Le contributeur a répondu à la demande de précisions : la proposition est de nouveau à décider.</p> : null}
 
         <ReviewPhotoGallery photos={proposal.photos} spotName={proposal.payload.name} />
 
@@ -62,6 +68,26 @@ export default async function ProposalPage({ params, searchParams }: ProposalPag
             <h3>Stationnement et approche</h3><p>{proposal.payload.parking}<br />{proposal.payload.walkingApproach}</p>
             <h3>Circulation</h3><p>{proposal.payload.traffic}</p>
             <div className="review-warning"><ShieldAlert /><div><h3>Risques et restrictions</h3><p>{proposal.payload.risks}</p></div></div>
+            {proposal.exchanges.length ? (
+              <section className="exchange-history" aria-label="Échanges avec le contributeur">
+                <h3>Échanges avec le contributeur</h3>
+                <p className="exchange-hint">Messages visibles par le contributeur. Les notes internes n&apos;apparaissent jamais ici.</p>
+                <ol>
+                  {proposal.exchanges.map((exchange) => (
+                    <li key={exchange.id}>
+                      <div className="exchange-message"><span>Demande · {formatDate(exchange.requestedAt)}</span><p>{exchange.publicMessage}</p></div>
+                      {exchange.response ? (
+                        <div className="exchange-message exchange-response"><span>Réponse du contributeur · {exchange.respondedAt ? formatDate(exchange.respondedAt) : ""}</span><p>{exchange.response}</p></div>
+                      ) : exchange.closedAt ? (
+                        <p className="exchange-hint">Demande close sans réponse.</p>
+                      ) : (
+                        <p className="exchange-hint">En attente de la réponse du contributeur.</p>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            ) : null}
           </section>
 
           <aside className="decision-card">
@@ -72,7 +98,8 @@ export default async function ProposalPage({ params, searchParams }: ProposalPag
               <form action={reviewAction}>
                 <label>Précision affichée<select name="displayPrecision" defaultValue={proposal.payload.displayPrecision}><option value="exact">Exacte</option><option value="approximate">Approximative</option></select></label>
                 <label className="check-row"><input type="checkbox" name="sensitive" defaultChecked={proposal.payload.locationStatus === "sensitive"} /><span>Classer le lieu comme sensible</span></label>
-                <label>Note interne<textarea name="internalNote" rows={5} maxLength={2000} placeholder="Motif ou vérifications réalisées…" /></label>
+                <label>Message au contributeur <small>obligatoire pour « Demander des précisions », visible par le contributeur dans l&apos;application et par e-mail</small><textarea name="publicMessage" rows={5} maxLength={2000} placeholder="Ex. Pouvez-vous préciser où se garer et si l'accès est autorisé le week-end ?" /></label>
+                <label>Note interne <small>jamais transmise au contributeur</small><textarea name="internalNote" rows={4} maxLength={2000} placeholder="Motif ou vérifications réalisées…" /></label>
                 <div className="decision-actions">
                   <button className="button" name="decision" value="approved" type="submit">Accepter et publier</button>
                   <button className="button button-secondary" name="decision" value="changes_requested" type="submit">Demander des précisions</button>
@@ -80,7 +107,9 @@ export default async function ProposalPage({ params, searchParams }: ProposalPag
                   <button className="text-decision danger" name="decision" value="rejected" type="submit">Refuser la proposition</button>
                 </div>
               </form>
-            </> : <p>Une demande de précisions a déjà été enregistrée. La proposition reste visible ici, mais aucune seconde décision ne sera acceptée avant une nouvelle soumission.</p>}
+            </> : proposal.state === "changes_requested"
+              ? <p>Une demande de précisions est en cours. La proposition revient automatiquement dans la file dès que le contributeur répond ; une nouvelle décision sera alors possible.</p>
+              : <p>Cette proposition a déjà reçu une décision.</p>}
           </aside>
         </div>
       </div>

@@ -123,6 +123,50 @@ export type Database = {
         }
         Relationships: []
       }
+      proposal_change_requests: {
+        Row: {
+          closed_at: string | null
+          id: string
+          proposal_id: string
+          public_message: string
+          requested_at: string
+          requested_by: string | null
+          responded_at: string | null
+          response: string | null
+          response_key_hash: string | null
+        }
+        Insert: {
+          closed_at?: string | null
+          id?: string
+          proposal_id: string
+          public_message: string
+          requested_at?: string
+          requested_by?: string | null
+          responded_at?: string | null
+          response?: string | null
+          response_key_hash?: string | null
+        }
+        Update: {
+          closed_at?: string | null
+          id?: string
+          proposal_id?: string
+          public_message?: string
+          requested_at?: string
+          requested_by?: string | null
+          responded_at?: string | null
+          response?: string | null
+          response_key_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_change_requests_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proposal_photos: {
         Row: {
           byte_size: number | null
@@ -818,10 +862,26 @@ export type Database = {
       lookup_proposal_statuses: {
         Args: { p_client_key: string; p_items: Json }
         Returns: {
+          request_message: string | null
+          requested_at: string | null
           status: string
           tracking_id: string
           updated_at: string | null
         }[]
+      }
+      admin_request_proposal_changes: {
+        Args: { p_internal_note?: string; p_proposal_id: string; p_public_message: string }
+        Returns: string
+      }
+      reply_to_proposal_request: {
+        Args: {
+          p_client_key: string
+          p_email: string
+          p_idempotency_key: string
+          p_response: string
+          p_tracking_id: string
+        }
+        Returns: string
       }
       admin_change_spot_state: {
         Args: { p_next_state: string; p_note: string; p_spot_id: string }

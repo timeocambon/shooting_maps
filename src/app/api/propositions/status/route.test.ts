@@ -49,8 +49,8 @@ describe("POST /api/propositions/status", () => {
     expect(payload).toEqual({
       ok: true,
       results: [
-        { trackingId: "SPT-STATUS0001", status: "in_review", updatedAt: "2026-11-10T09:30:00.000Z" },
-        { trackingId: "SPT-STATUS0002", status: "published", updatedAt: "2026-11-11T08:00:00.000Z" },
+        { trackingId: "SPT-STATUS0001", status: "in_review", updatedAt: "2026-11-10T09:30:00.000Z", request: null },
+        { trackingId: "SPT-STATUS0002", status: "published", updatedAt: "2026-11-11T08:00:00.000Z", request: null },
       ],
     });
     expect(rpc).toHaveBeenCalledTimes(1);
@@ -73,8 +73,8 @@ describe("POST /api/propositions/status", () => {
     const payload = await (await post({ items: [item(1, "intrus@example.com"), { trackingId: "SPT-INCONNU999", email: "rider@example.com" }] })).json();
 
     expect(payload.results).toEqual([
-      { trackingId: "SPT-STATUS0001", status: "unknown", updatedAt: null },
-      { trackingId: "SPT-INCONNU999", status: "unknown", updatedAt: null },
+      { trackingId: "SPT-STATUS0001", status: "unknown", updatedAt: null, request: null },
+      { trackingId: "SPT-INCONNU999", status: "unknown", updatedAt: null, request: null },
     ]);
     expect(payload.results[0]).toEqual({ ...payload.results[1], trackingId: "SPT-STATUS0001" });
   });
@@ -103,7 +103,48 @@ describe("POST /api/propositions/status", () => {
       trackingId: "SPT-STATUS0001",
       status: "rejected",
       updatedAt: "2026-11-10T09:30:00.000Z",
+      request: null,
     });
+  });
+
+  it("renvoie la demande publique ouverte uniquement pour « changes_requested »", async () => {
+    rpc.mockResolvedValue({
+      data: [
+        {
+          tracking_id: "SPT-STATUS0001",
+          status: "changes_requested",
+          updated_at: "2026-11-11T10:00:00+00:00",
+          request_message: "Pouvez-vous préciser le stationnement ?",
+          requested_at: "2026-11-11T09:59:00+00:00",
+          moderation_comment: "NOTE-INTERNE",
+        },
+        {
+          tracking_id: "SPT-STATUS0002",
+          status: "in_review",
+          updated_at: "2026-11-11T10:00:00+00:00",
+          request_message: "Ancienne demande ne devant pas apparaître",
+          requested_at: "2026-11-01T09:00:00+00:00",
+        },
+        { tracking_id: "SPT-STATUS0003", status: "unknown", updated_at: null, request_message: "fuite", requested_at: "2026-11-01T09:00:00+00:00" },
+      ],
+      error: null,
+    });
+
+    const response = await post({ items: [item(1), item(2), item(3)] });
+    const text = await response.text();
+
+    expect(JSON.parse(text).results).toEqual([
+      {
+        trackingId: "SPT-STATUS0001",
+        status: "changes_requested",
+        updatedAt: "2026-11-11T10:00:00.000Z",
+        request: { message: "Pouvez-vous préciser le stationnement ?", requestedAt: "2026-11-11T09:59:00.000Z" },
+      },
+      { trackingId: "SPT-STATUS0002", status: "in_review", updatedAt: "2026-11-11T10:00:00.000Z", request: null },
+      { trackingId: "SPT-STATUS0003", status: "unknown", updatedAt: null, request: null },
+    ]);
+    expect(text).not.toContain("NOTE-INTERNE");
+    expect(text).not.toContain("fuite");
   });
 
   it("transforme un état interne inattendu ou une ligne absente en « unknown »", async () => {
@@ -115,8 +156,8 @@ describe("POST /api/propositions/status", () => {
     const payload = await (await post({ items: [item(1), item(2)] })).json();
 
     expect(payload.results).toEqual([
-      { trackingId: "SPT-STATUS0001", status: "unknown", updatedAt: null },
-      { trackingId: "SPT-STATUS0002", status: "unknown", updatedAt: null },
+      { trackingId: "SPT-STATUS0001", status: "unknown", updatedAt: null, request: null },
+      { trackingId: "SPT-STATUS0002", status: "unknown", updatedAt: null, request: null },
     ]);
   });
 

@@ -71,8 +71,8 @@ select is(
      unnest(p.proargnames, p.proargmodes::text[]) with ordinality as a(name, mode, position)
    where p.oid = 'public.lookup_proposal_statuses(jsonb, text)'::regprocedure
      and a.mode = 't'),
-  array['tracking_id', 'status', 'updated_at'],
-  'Seules trois colonnes publiques : numéro, statut, date (ni e-mail, ni UUID, ni commentaire)'
+  array['tracking_id', 'status', 'updated_at', 'request_message', 'requested_at'],
+  'Colonnes publiques seulement : numéro, statut, date, demande publique ouverte (20261111170000) ; ni e-mail, ni UUID, ni commentaire'
 );
 
 -- Mauvais e-mail et numéro inconnu : même réponse neutre -----------------------

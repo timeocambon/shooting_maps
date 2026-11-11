@@ -29,7 +29,7 @@ export default async function ProposalsPage({ searchParams }: QueuePageProps) {
           <div className="moderation-list">
             {proposals.map((proposal) => (
               <article key={proposal.id}>
-                <div className="moderation-list-main"><span className="status-chip">{proposalStateLabels[proposal.state as keyof typeof proposalStateLabels] ?? proposal.state}</span><h2>{proposal.name}</h2><p>{proposal.municipality} · {proposal.photoCount} photo{proposal.photoCount > 1 ? "s" : ""}</p></div>
+                <div className="moderation-list-main"><span className="status-chip">{proposalStateLabels[proposal.state as keyof typeof proposalStateLabels] ?? proposal.state}</span>{proposal.hasNewResponse ? <span className="status-chip exchange-chip">Réponse reçue</span> : null}<h2>{proposal.name}</h2><p>{proposal.municipality} · {proposal.photoCount} photo{proposal.photoCount > 1 ? "s" : ""}</p></div>
                 <div className="moderation-list-meta"><span>{proposal.trackingId}</span><time dateTime={proposal.submittedAt ?? undefined}>{proposal.submittedAt ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" }).format(new Date(proposal.submittedAt)) : "Sans date"}</time><Link href={`/admin/propositions/${proposal.id}`}>Examiner <ArrowRight size={16} /></Link></div>
               </article>
             ))}

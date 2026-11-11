@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getAdminSessionState } from "@/features/admin/admin-session";
+import { MAX_EXCHANGE_LENGTH } from "@/features/proposals/domain/change-request";
 import { sendProposalDecisionEmail } from "@/features/proposals/server/confirmation-email";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -11,6 +12,8 @@ const reviewSchema = z.object({
   proposalId: z.uuid(),
   decision: z.enum(["approved", "changes_requested", "rejected", "duplicate"]),
   internalNote: z.string().trim().max(2000),
+  /** Message au contributeur : obligatoire uniquement pour une demande de précisions. */
+  publicMessage: z.string().trim().max(MAX_EXCHANGE_LENGTH),
   displayPrecision: z.enum(["exact", "approximate"]),
   sensitive: z.boolean(),
 });
@@ -23,10 +26,14 @@ export async function reviewProposalAction(proposalId: string, formData: FormDat
     proposalId,
     decision: formData.get("decision"),
     internalNote: formData.get("internalNote") ?? "",
+    publicMessage: formData.get("publicMessage") ?? "",
     displayPrecision: formData.get("displayPrecision") ?? "exact",
     sensitive: formData.get("sensitive") === "on",
   });
   if (!parsed.success) redirect(`/admin/propositions/${proposalId}?erreur=validation`);
+  if (parsed.data.decision === "changes_requested" && !parsed.data.publicMessage) {
+    redirect(`/admin/propositions/${proposalId}?erreur=message-public`);
+  }
 
   const supabase = await createSupabaseServerClient();
   const publishedPaths: string[] = [];
@@ -36,6 +43,37 @@ export async function reviewProposalAction(proposalId: string, formData: FormDat
     .select("contributor_email, tracking_id")
     .eq("id", proposalId)
     .maybeSingle();
+
+  if (parsed.data.decision === "changes_requested") {
+    // Demande de précisions : message public (visible du contributeur) et
+    // note interne (moderation_comment, jamais transmise) restent séparés.
+    const { error: requestError } = await supabase.rpc("admin_request_proposal_changes", {
+      p_proposal_id: parsed.data.proposalId,
+      p_public_message: parsed.data.publicMessage,
+      p_internal_note: parsed.data.internalNote,
+    });
+    if (requestError) {
+      const reason = requestError.message ?? "";
+      const code =
+        reason.includes("proposal_already_reviewed") || reason.includes("request_already_open")
+          ? "deja-traitee"
+          : reason.includes("invalid_message")
+            ? "message-public"
+            : "decision";
+      redirect(`/admin/propositions/${proposalId}?erreur=${code}`);
+    }
+    if (contact) {
+      await sendProposalDecisionEmail({
+        email: contact.contributor_email,
+        trackingId: contact.tracking_id,
+        decision: "changes_requested",
+        publicMessage: parsed.data.publicMessage,
+      });
+    }
+    revalidatePath("/admin");
+    revalidatePath("/admin/propositions");
+    redirect(`/admin/propositions?decision=changes_requested`);
+  }
 
   if (parsed.data.decision === "approved") {
     const { data: proposal, error: proposalError } = await supabase

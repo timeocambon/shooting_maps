@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_EXCHANGE_LENGTH } from "@/features/proposals/domain/change-request";
 import {
   isPublicProposalStatus,
   MAX_STATUS_ITEMS,
@@ -36,6 +37,8 @@ const rowSchema = z.object({
   tracking_id: z.string(),
   status: z.string(),
   updated_at: z.string().nullable(),
+  request_message: z.string().nullable().optional(),
+  requested_at: z.string().nullable().optional(),
 });
 
 const noStore = { "Cache-Control": "no-store" };
@@ -52,9 +55,12 @@ function errorResponse(message: string, status: number) {
  * normalisé correspondent ; sinon la réponse est neutre (`unknown`, sans
  * date), identique pour un numéro inconnu et pour un mauvais e-mail.
  *
- * Sortie : `{ ok: true, results: [{ trackingId, status, updatedAt }] }`, dans
- * l'ordre de la requête, sans doublon. Ni e-mail, ni identifiant interne,
- * ni commentaire de modération. Aucune donnée de la requête n'est journalisée.
+ * Sortie : `{ ok: true, results: [{ trackingId, status, updatedAt, request }] }`,
+ * dans l'ordre de la requête, sans doublon. `request` vaut
+ * `{ message, requestedAt }` uniquement pour une demande de précisions
+ * ouverte (statut `changes_requested`), sinon `null`. Ni e-mail, ni
+ * identifiant interne, ni note de modération. Aucune donnée de la requête
+ * n'est journalisée.
  */
 export async function POST(request: Request) {
   if (!isServiceRoleConfigured()) {
@@ -112,7 +118,16 @@ export async function POST(request: Request) {
       status !== "unknown" && row?.updated_at && !Number.isNaN(Date.parse(row.updated_at))
         ? new Date(row.updated_at).toISOString()
         : null;
-    return { trackingId, status, updatedAt };
+    // Seule la demande publique ouverte, et seulement pour « changes_requested ».
+    const request =
+      status === "changes_requested" &&
+      row?.request_message &&
+      row.request_message.length <= MAX_EXCHANGE_LENGTH &&
+      row.requested_at &&
+      !Number.isNaN(Date.parse(row.requested_at))
+        ? { message: row.request_message, requestedAt: new Date(row.requested_at).toISOString() }
+        : null;
+    return { trackingId, status, updatedAt, request };
   });
 
   return Response.json({ ok: true, results }, { headers: noStore });

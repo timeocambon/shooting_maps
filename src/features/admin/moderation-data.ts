@@ -1,5 +1,10 @@
 import "server-only";
 
+import {
+  hasUnreviewedResponse,
+  toExchanges,
+  type ProposalExchange,
+} from "@/features/proposals/domain/change-request";
 import { proposalPayloadSchema, type ProposalPayload } from "@/features/proposals/domain/proposal";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -12,6 +17,8 @@ export type ProposalSummary = {
   state: string;
   submittedAt: string | null;
   photoCount: number;
+  /** Réponse du contributeur arrivée, décision à prendre. */
+  hasNewResponse: boolean;
 };
 
 export type ProposalReview = {
@@ -32,6 +39,9 @@ export type ProposalReview = {
     signedUrl: string;
     moderationState: "pending" | "approved" | "hidden" | "rejected";
   }>;
+  /** Demandes de précisions et réponses (messages publics uniquement). */
+  exchanges: ProposalExchange[];
+  hasNewResponse: boolean;
 };
 
 /**
@@ -110,7 +120,7 @@ export async function getModerationQueue(): Promise<ProposalSummary[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("proposals")
-    .select("id, tracking_id, contributor_email, state, submitted_at, payload, proposal_photos(count)")
+    .select("id, tracking_id, contributor_email, state, submitted_at, payload, proposal_photos(count), proposal_change_requests(requested_at, responded_at)")
     .in("state", ["submitted", "changes_requested"])
     .order("submitted_at", { ascending: true, nullsFirst: false });
 
@@ -126,6 +136,13 @@ export async function getModerationQueue(): Promise<ProposalSummary[]> {
       state: row.state,
       submittedAt: row.submitted_at,
       photoCount: row.proposal_photos[0]?.count ?? 0,
+      hasNewResponse: hasUnreviewedResponse(
+        row.state,
+        (row.proposal_change_requests ?? []).map((request) => ({
+          requestedAt: request.requested_at,
+          respondedAt: request.responded_at,
+        })),
+      ),
     };
   });
 }
@@ -134,7 +151,7 @@ export async function getProposalReview(id: string): Promise<ProposalReview | nu
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("proposals")
-    .select("id, tracking_id, contributor_email, public_pseudonym, state, submitted_at, payload, proposal_photos(id, display_order, credit, width, height, byte_size, processed_object_path, moderation_state)")
+    .select("id, tracking_id, contributor_email, public_pseudonym, state, submitted_at, payload, proposal_photos(id, display_order, credit, width, height, byte_size, processed_object_path, moderation_state), proposal_change_requests(id, public_message, requested_at, response, responded_at, closed_at)")
     .eq("id", id)
     .maybeSingle();
 
@@ -143,6 +160,7 @@ export async function getProposalReview(id: string): Promise<ProposalReview | nu
   const payload = proposalPayloadSchema.safeParse(data.payload);
   if (!payload.success) return null;
 
+  const exchanges = toExchanges(data.proposal_change_requests);
   const photos = await Promise.all(
     data.proposal_photos
       .filter((photo) => photo.processed_object_path)
@@ -173,5 +191,7 @@ export async function getProposalReview(id: string): Promise<ProposalReview | nu
     submittedAt: data.submitted_at,
     payload: payload.data,
     photos,
+    exchanges,
+    hasNewResponse: hasUnreviewedResponse(data.state, exchanges),
   };
 }

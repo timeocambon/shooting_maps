@@ -1,5 +1,6 @@
 import "server-only";
 
+import { escapeHtmlText } from "@/features/proposals/domain/change-request";
 import { getServerEnv } from "@/lib/server-env";
 
 type ConfirmationEmailInput = {
@@ -67,33 +68,73 @@ export async function sendProposalConfirmationEmail({
   }
 }
 
+/**
+ * Contenu de l'e-mail de décision. Ne reçoit jamais la note interne : seul
+ * le message public (demande de précisions) peut y figurer, échappé.
+ */
+export function buildProposalDecisionEmail(input: {
+  trackingId: string;
+  decision: ProposalDecision;
+  publicMessage?: string | null;
+  siteUrl: string;
+}): { subject: string; html: string } {
+  const trackingId = escapeHtmlText(input.trackingId);
+  const messages: Record<ProposalDecision, { subject: string; body: string }> = {
+    approved: {
+      subject: `Votre proposition ${input.trackingId} est publiée`,
+      body: "<p>Votre contribution a été vérifiée et publiée sur Spotride.</p>",
+    },
+    changes_requested: {
+      subject: `Des précisions sont nécessaires pour ${input.trackingId}`,
+      body: "",
+    },
+    rejected: {
+      subject: `Décision concernant ${input.trackingId}`,
+      body: "<p>Votre contribution ne peut pas être publiée dans son état actuel. Merci d'avoir pris le temps de la proposer.</p>",
+    },
+    duplicate: {
+      subject: `Votre proposition ${input.trackingId} correspond à un spot existant`,
+      body: "<p>La proposition a été classée comme doublon lors de la modération.</p>",
+    },
+  };
+  const message = messages[input.decision];
+
+  if (input.decision === "changes_requested") {
+    const trackingUrl = new URL("/proposition-confirmee", input.siteUrl);
+    trackingUrl.searchParams.set("suivi", input.trackingId);
+    const publicMessage = input.publicMessage?.trim()
+      ? `<blockquote>${escapeHtmlText(input.publicMessage.trim())}</blockquote>`
+      : "";
+    message.body = `
+      <p>L'équipe de modération a besoin de précisions avant de reprendre l'examen :</p>
+      ${publicMessage}
+      <p>Répondez depuis l'application Spotride : onglet <strong>Compte</strong>, section <strong>Mes propositions</strong>, bouton <strong>Répondre</strong>.</p>
+      <p>Vous pouvez aussi consulter la <a href="${escapeHtmlText(trackingUrl.toString())}">page de suivi</a>.</p>
+    `;
+  }
+
+  return {
+    subject: message.subject,
+    html: `<h1>${escapeHtmlText(message.subject)}</h1>${message.body}<p>Numéro de suivi : <strong>${trackingId}</strong></p>`,
+  };
+}
+
 export async function sendProposalDecisionEmail(input: {
   email: string;
   trackingId: string;
   decision: ProposalDecision;
+  /** Message public de la demande de précisions (jamais la note interne). */
+  publicMessage?: string | null;
 }): Promise<boolean> {
   const env = getServerEnv();
   if (!env.BREVO_API_KEY || !env.BREVO_SENDER_EMAIL) return false;
 
-  const messages: Record<ProposalDecision, { subject: string; body: string }> = {
-    approved: {
-      subject: `Votre proposition ${input.trackingId} est publiée`,
-      body: "Votre contribution a été vérifiée et publiée sur Spotride.",
-    },
-    changes_requested: {
-      subject: `Des précisions sont nécessaires pour ${input.trackingId}`,
-      body: "L'équipe de modération va vous contacter afin de compléter certaines informations avant de reprendre l'examen.",
-    },
-    rejected: {
-      subject: `Décision concernant ${input.trackingId}`,
-      body: "Votre contribution ne peut pas être publiée dans son état actuel. Merci d'avoir pris le temps de la proposer.",
-    },
-    duplicate: {
-      subject: `Votre proposition ${input.trackingId} correspond à un spot existant`,
-      body: "La proposition a été classée comme doublon lors de la modération.",
-    },
-  };
-  const message = messages[input.decision];
+  const message = buildProposalDecisionEmail({
+    trackingId: input.trackingId,
+    decision: input.decision,
+    publicMessage: input.publicMessage,
+    siteUrl: env.NEXT_PUBLIC_SITE_URL,
+  });
 
   try {
     const response = await fetch("https://api.brevo.com/v3/smtp/email", {
@@ -107,7 +148,7 @@ export async function sendProposalDecisionEmail(input: {
         sender: { email: env.BREVO_SENDER_EMAIL, name: env.BREVO_SENDER_NAME },
         to: [{ email: input.email }],
         subject: message.subject,
-        htmlContent: `<h1>${message.subject}</h1><p>${message.body}</p><p>Numéro de suivi : <strong>${input.trackingId}</strong></p>`,
+        htmlContent: message.html,
       }),
       cache: "no-store",
     });
