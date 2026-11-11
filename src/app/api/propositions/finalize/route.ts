@@ -78,7 +78,7 @@ export async function POST(request: Request) {
           path: photo.path,
           error: downloadError,
         });
-        throw new Error("upload_failed");
+        throw new Error("download_failed");
       }
 
       let image;
@@ -121,7 +121,7 @@ export async function POST(request: Request) {
         });
       if (originalError) {
         console.error("[api/propositions/finalize] upload_original_failed", originalError);
-        throw originalError;
+        throw new Error("upload_original_failed");
       }
       finalPaths.push(originalPath);
 
@@ -134,7 +134,7 @@ export async function POST(request: Request) {
         });
       if (processedError) {
         console.error("[api/propositions/finalize] upload_processed_failed", processedError);
-        throw processedError;
+        throw new Error("upload_processed_failed");
       }
       finalPaths.push(processedPath);
 
@@ -152,7 +152,7 @@ export async function POST(request: Request) {
       });
       if (photoError) {
         console.error("[api/propositions/finalize] attach_failed", photoError);
-        throw photoError;
+        throw new Error("attach_failed");
       }
     }
   } catch (error) {
@@ -175,7 +175,21 @@ export async function POST(request: Request) {
         ? "Chaque photo doit mesurer au plus 20 000 px par côté."
         : reason.includes("invalid_file_size")
           ? "Chaque photo doit peser moins de 15 Mo."
-          : "Une photo est illisible ou son format n'est pas accepté.";
+          : reason.includes("invalid_image_content")
+            ? "Le fichier reçu ne peut pas être décodé (code IMG-DECODE)."
+            : reason.includes("unsupported_image")
+              ? "Le format réellement reçu n'est ni JPEG, ni PNG, ni WebP (code IMG-FORMAT)."
+              : reason.includes("download_failed")
+                ? "La photo envoyée n'a pas pu être relue depuis le stockage (code STORAGE-READ)."
+                : reason.includes("temporary_cleanup_failed")
+                  ? "Le stockage n'a pas pu préparer la photo (code STORAGE-CLEANUP)."
+                  : reason.includes("upload_original_failed")
+                    ? "Le stockage a refusé l'original (code STORAGE-ORIGINAL)."
+                    : reason.includes("upload_processed_failed")
+                      ? "Le stockage a refusé la version optimisée (code STORAGE-WEBP)."
+                      : reason.includes("attach_failed")
+                        ? "Supabase n'a pas pu rattacher la photo (code DB-ATTACH)."
+                        : "La photo n'a pas pu être finalisée (code PHOTO-UNKNOWN).";
     return errorResponse(imageMessage);
   }
 
