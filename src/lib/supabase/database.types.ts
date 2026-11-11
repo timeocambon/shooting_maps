@@ -740,6 +740,10 @@ export type Database = {
         Args: { p_object_path: string; p_public_url: string }
         Returns: string
       }
+      admin_mobile_access: {
+        Args: { p_action: string }
+        Returns: string
+      }
       admin_delete_photographer: {
         Args: { p_photographer_id: string }
         Returns: string[]

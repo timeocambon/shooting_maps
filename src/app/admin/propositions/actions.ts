@@ -6,6 +6,7 @@ import { z } from "zod";
 import { getAdminSessionState } from "@/features/admin/admin-session";
 import { MAX_EXCHANGE_LENGTH } from "@/features/proposals/domain/change-request";
 import { sendProposalDecisionEmail } from "@/features/proposals/server/confirmation-email";
+import { requestProposalChanges } from "@/features/proposals/server/request-changes";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const reviewSchema = z.object({
@@ -47,28 +48,20 @@ export async function reviewProposalAction(proposalId: string, formData: FormDat
   if (parsed.data.decision === "changes_requested") {
     // Demande de précisions : message public (visible du contributeur) et
     // note interne (moderation_comment, jamais transmise) restent séparés.
-    const { error: requestError } = await supabase.rpc("admin_request_proposal_changes", {
-      p_proposal_id: parsed.data.proposalId,
-      p_public_message: parsed.data.publicMessage,
-      p_internal_note: parsed.data.internalNote,
+    // Logique partagée avec l'administration mobile.
+    const result = await requestProposalChanges(supabase, {
+      proposalId: parsed.data.proposalId,
+      publicMessage: parsed.data.publicMessage,
+      internalNote: parsed.data.internalNote,
     });
-    if (requestError) {
-      const reason = requestError.message ?? "";
+    if (!result.ok) {
       const code =
-        reason.includes("proposal_already_reviewed") || reason.includes("request_already_open")
+        result.reason === "already_reviewed"
           ? "deja-traitee"
-          : reason.includes("invalid_message")
+          : result.reason === "invalid_message"
             ? "message-public"
             : "decision";
       redirect(`/admin/propositions/${proposalId}?erreur=${code}`);
-    }
-    if (contact) {
-      await sendProposalDecisionEmail({
-        email: contact.contributor_email,
-        trackingId: contact.tracking_id,
-        decision: "changes_requested",
-        publicMessage: parsed.data.publicMessage,
-      });
     }
     revalidatePath("/admin");
     revalidatePath("/admin/propositions");

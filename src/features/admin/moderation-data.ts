@@ -6,7 +6,19 @@ import {
   type ProposalExchange,
 } from "@/features/proposals/domain/change-request";
 import { proposalPayloadSchema, type ProposalPayload } from "@/features/proposals/domain/proposal";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/database.types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+/**
+ * Client Supabase de l'équipe : session du site (cookies) par défaut, ou
+ * jeton de l'application mobile. Dans les deux cas, les données sont lues
+ * sous les politiques RLS (`private.is_staff()`), jamais avec la clé de service.
+ */
+export type StaffClient = SupabaseClient<Database>;
+
+/** Durée de validité des liens temporaires vers les photos de modération. */
+export const MODERATION_PHOTO_URL_TTL_SECONDS = 15 * 60;
 
 export type ProposalSummary = {
   id: string;
@@ -42,6 +54,8 @@ export type ProposalReview = {
   /** Demandes de précisions et réponses (messages publics uniquement). */
   exchanges: ProposalExchange[];
   hasNewResponse: boolean;
+  /** Note interne (moderation_comment) : équipe uniquement, jamais transmise au contributeur. */
+  internalNote: string | null;
 };
 
 /**
@@ -116,8 +130,8 @@ export async function getAdminDashboardCounts() {
   };
 }
 
-export async function getModerationQueue(): Promise<ProposalSummary[]> {
-  const supabase = await createSupabaseServerClient();
+export async function getModerationQueue(client?: StaffClient): Promise<ProposalSummary[]> {
+  const supabase = client ?? (await createSupabaseServerClient());
   const { data, error } = await supabase
     .from("proposals")
     .select("id, tracking_id, contributor_email, state, submitted_at, payload, proposal_photos(count), proposal_change_requests(requested_at, responded_at)")
@@ -147,11 +161,15 @@ export async function getModerationQueue(): Promise<ProposalSummary[]> {
   });
 }
 
-export async function getProposalReview(id: string): Promise<ProposalReview | null> {
-  const supabase = await createSupabaseServerClient();
+export async function getProposalReview(
+  id: string,
+  client?: StaffClient,
+  photoUrlTtlSeconds: number = MODERATION_PHOTO_URL_TTL_SECONDS,
+): Promise<ProposalReview | null> {
+  const supabase = client ?? (await createSupabaseServerClient());
   const { data, error } = await supabase
     .from("proposals")
-    .select("id, tracking_id, contributor_email, public_pseudonym, state, submitted_at, payload, proposal_photos(id, display_order, credit, width, height, byte_size, processed_object_path, moderation_state), proposal_change_requests(id, public_message, requested_at, response, responded_at, closed_at)")
+    .select("id, tracking_id, contributor_email, public_pseudonym, state, submitted_at, payload, moderation_comment, proposal_photos(id, display_order, credit, width, height, byte_size, processed_object_path, moderation_state), proposal_change_requests(id, public_message, requested_at, response, responded_at, closed_at)")
     .eq("id", id)
     .maybeSingle();
 
@@ -168,7 +186,8 @@ export async function getProposalReview(id: string): Promise<ProposalReview | nu
       .map(async (photo) => {
         const { data: signed } = await supabase.storage
           .from("spot-originals")
-          .createSignedUrl(photo.processed_object_path!, 15 * 60);
+          // Version traitée uniquement (jamais l'original), lien temporaire.
+          .createSignedUrl(photo.processed_object_path!, photoUrlTtlSeconds);
         return {
           id: photo.id,
           displayOrder: photo.display_order,
@@ -193,5 +212,6 @@ export async function getProposalReview(id: string): Promise<ProposalReview | nu
     photos,
     exchanges,
     hasNewResponse: hasUnreviewedResponse(data.state, exchanges),
+    internalNote: data.moderation_comment,
   };
 }
