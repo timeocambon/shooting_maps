@@ -92,6 +92,21 @@ export async function POST(request: Request) {
         throw processError;
       }
 
+      // Le fichier temporaire est désormais entièrement chargé en mémoire.
+      // Le retirer avant de créer les deux versions finales évite de dépasser
+      // la limite de 12 objets de la capability quand une proposition contient
+      // 4 à 6 photos (N temporaires + 2N versions finales).
+      const { error: tempRemoveError } = await supabase.storage
+        .from("spot-originals")
+        .remove([photo.path]);
+      if (tempRemoveError) {
+        console.error("[api/propositions/finalize] remove_temporary_failed", {
+          path: photo.path,
+          error: tempRemoveError,
+        });
+        throw new Error("temporary_cleanup_failed");
+      }
+
       const fileId = randomUUID();
       const basePath = `proposals/${proposalId}/${uploadSecret}`;
       const originalPath = `${basePath}/original-${photo.index}-${fileId}.${image.originalExtension}`;
