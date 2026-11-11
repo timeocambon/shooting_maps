@@ -28,6 +28,18 @@ const bodySchema = z.object({
     .max(6),
 });
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isExpectedTemporaryPath(
+  path: string,
+  proposalId: string,
+  uploadSecret: string,
+  index: number,
+) {
+  const prefix = `proposals/${proposalId}/${uploadSecret}/upload-${index}-`;
+  return path.startsWith(prefix) && UUID.test(path.slice(prefix.length));
+}
+
 function errorResponse(message: string, status = 400) {
   return NextResponse.json({ ok: false, message }, { status });
 }
@@ -63,6 +75,14 @@ export async function POST(request: Request) {
   const { proposalId, uploadSecret, emailToken, trackingId, email, photoCredit, photos } =
     parsed.data;
 
+  if (
+    !photos.every((photo) =>
+      isExpectedTemporaryPath(photo.path, proposalId, uploadSecret, photo.index),
+    )
+  ) {
+    return errorResponse("Chemin de photo invalide.");
+  }
+
   const supabase = createSupabasePublicServerClient();
   const serviceSupabase = createSupabaseServiceRoleClient();
   const tempPaths = photos.map((photo) => photo.path);
@@ -93,10 +113,11 @@ export async function POST(request: Request) {
       }
 
       // Le fichier temporaire est désormais entièrement chargé en mémoire.
-      // Le retirer avant de créer les deux versions finales évite de dépasser
-      // la limite de 12 objets de la capability quand une proposition contient
-      // 4 à 6 photos (N temporaires + 2N versions finales).
-      const { error: tempRemoveError } = await supabase.storage
+      // Son chemin a été strictement validé ci-dessus ; la clé de service est
+      // nécessaire ici, car le DELETE public peut être filtré silencieusement
+      // par RLS. Le retirer avant les deux versions finales évite de dépasser
+      // la limite de 12 objets pour une proposition de 4 à 6 photos.
+      const { error: tempRemoveError } = await serviceSupabase.storage
         .from("spot-originals")
         .remove([photo.path]);
       if (tempRemoveError) {
