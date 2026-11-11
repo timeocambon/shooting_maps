@@ -815,6 +815,14 @@ export type Database = {
         Args: { p_proposal_id: string; p_upload_secret: string }
         Returns: boolean
       }
+      lookup_proposal_statuses: {
+        Args: { p_client_key: string; p_items: Json }
+        Returns: {
+          status: string
+          tracking_id: string
+          updated_at: string | null
+        }[]
+      }
       admin_change_spot_state: {
         Args: { p_next_state: string; p_note: string; p_spot_id: string }
         Returns: string
