@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { PHOTO_RULES } from "@/features/proposals/domain/photo-rules";
 import { sendProposalConfirmationEmail } from "@/features/proposals/server/confirmation-email";
 import { processProposalImage } from "@/features/proposals/server/image-processing";
 import { isSupabaseConfigured } from "@/lib/env";
@@ -154,10 +155,12 @@ export async function POST(request: Request) {
 
     const reason = error instanceof Error ? error.message : "upload_failed";
     const imageMessage = reason.includes("image_too_small")
-      ? "Chaque photo doit mesurer au moins 1000 × 600 pixels."
-      : reason.includes("invalid_file_size")
-        ? "Chaque photo doit peser moins de 15 Mo."
-        : "Une photo est illisible ou son format n'est pas accepté.";
+      ? `Chaque photo doit mesurer au moins ${PHOTO_RULES.minLongSide} px sur son grand côté et ${PHOTO_RULES.minShortSide} px sur son petit côté.`
+      : reason.includes("image_too_large")
+        ? "Chaque photo doit mesurer au plus 20 000 px par côté."
+        : reason.includes("invalid_file_size")
+          ? "Chaque photo doit peser moins de 15 Mo."
+          : "Une photo est illisible ou son format n'est pas accepté.";
     return errorResponse(imageMessage);
   }
 

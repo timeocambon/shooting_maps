@@ -24,7 +24,13 @@ import {
   type SpotCategory,
 } from "@/features/spots/domain/spot";
 import { createSupabasePublicBrowserClient } from "@/lib/supabase/public-browser";
-import { prepareImageForUpload } from "@/lib/image-processing";
+import {
+  checkPhotoDimensions,
+  isAcceptedPhotoBytes,
+  PHOTO_SIZE_RULE_TEXT,
+  uploadMaxDimension,
+} from "@/features/proposals/domain/photo-rules";
+import { MAX_UPLOAD_DIMENSION, prepareImageForUpload } from "@/lib/image-processing";
 import { PrivacyNotice } from "@/components/privacy-notice";
 
 const DRAFT_KEY = "spotride:proposal-draft:v1";
@@ -484,21 +490,30 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
     setPhotoSelectionError(false);
 
     for (const photo of candidates) {
-      if (photo.size > 15 * 1024 * 1024) {
+      if (!isAcceptedPhotoBytes(photo.size)) {
         rejected.push(`${photo.name} dépasse 15 Mo`);
         continue;
       }
 
       try {
-        // Le contrôle de dimensions porte sur le fichier d'origine.
+        // Le contrôle de dimensions porte sur le fichier d'origine, quelle que
+        // soit son orientation (grand côté ≥ 1000 px, petit côté ≥ 600 px).
         const { width, height } = await readImageDimensions(photo);
-        if (width < 1000 || height < 600) {
+        const dimensions = checkPhotoDimensions(width, height);
+        if (dimensions === "too-large") {
+          rejected.push(`${photo.name} dépasse 20 000 px sur un côté`);
+        } else if (dimensions !== "ok") {
           rejected.push(`${photo.name} (${width} × ${height} px)`);
         } else {
           // Réduite et réencodée avant l'envoi : allège le stockage, et
           // surtout supprime les métadonnées EXIF (dont les coordonnées GPS
           // du lieu de prise de vue, qu'une fiche peut vouloir garder floues).
-          const { file: prepared } = await prepareImageForUpload(photo, { forceReencode: true });
+          // Ratio et orientation conservés ; une photo très allongée garde
+          // au moins 600 px sur son petit côté.
+          const { file: prepared } = await prepareImageForUpload(photo, {
+            forceReencode: true,
+            maxDimension: uploadMaxDimension(width, height, MAX_UPLOAD_DIMENSION),
+          });
           accepted.push(prepared);
         }
       } catch {
@@ -513,7 +528,7 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
 
     const messages: string[] = [];
     if (rejected.length) {
-      messages.push(`Photos refusées (minimum 1000 × 600 px) : ${rejected.join(", ")}.`);
+      messages.push(`Photos refusées : ${rejected.join(", ")}. ${PHOTO_SIZE_RULE_TEXT}`);
     }
     if (uniqueIncoming.length > availableSlots) {
       messages.push("La limite de 6 photos est atteinte ; les images supplémentaires n’ont pas été ajoutées.");
@@ -868,7 +883,7 @@ export function ProposalWizard({ mapStyleUrl }: { mapStyleUrl: string }) {
           {step === 3 ? (
             <fieldset>
               <legend><Camera /> Ajoutez vos photos</legend>
-              <p className="fieldset-intro">2 à 6 images JPEG, PNG ou WebP, 15 Mo maximum chacune et au moins 1000 × 600 pixels. Les métadonnées sont retirées des versions publiables.</p>
+              <p className="fieldset-intro">2 à 6 images JPEG, PNG ou WebP, verticales ou horizontales, 15 Mo maximum chacune, avec au moins 1000 px sur le grand côté et 600 px sur le petit côté. Les métadonnées sont retirées des versions publiables.</p>
               <label className="upload-zone"><Camera /><strong>{checkingPhotos ? "Vérification des images…" : photos.length ? "Ajouter d’autres photos" : "Choisir des photos"}</strong><span>{photos.length}/6 sélectionnées · vous pouvez les choisir ensemble ou une par une.</span><input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={checkingPhotos} onChange={(event) => { void addPhotos(event.currentTarget.files); event.currentTarget.value = ""; }} /></label>
               {photoSelectionMessage ? <p className={`photo-selection-message${photoSelectionError ? " is-error" : ""}`} role={photoSelectionError ? "alert" : "status"}>{photoSelectionMessage}</p> : null}
               <div className="photo-file-list">{photos.map((photo, index) => <article key={photoKey(photo)}><div><strong>{index + 1}. {photo.name}</strong><span>{(photo.size / 1024 / 1024).toFixed(1)} Mo</span></div><div><button type="button" onClick={() => movePhoto(index, -1)} disabled={index === 0} aria-label={`Monter ${photo.name}`}><ArrowUp size={16} /></button><button type="button" onClick={() => movePhoto(index, 1)} disabled={index === photos.length - 1} aria-label={`Descendre ${photo.name}`}><ArrowDown size={16} /></button><button type="button" onClick={() => setPhotos((current) => current.filter((_, photoIndex) => photoIndex !== index))} aria-label={`Supprimer ${photo.name}`}><Trash2 size={16} /></button></div></article>)}</div>
