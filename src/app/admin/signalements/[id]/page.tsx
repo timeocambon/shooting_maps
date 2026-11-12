@@ -6,6 +6,7 @@ import { reviewReportAction } from "@/app/admin/signalements/actions";
 import { getAdminSessionState } from "@/features/admin/admin-session";
 import { getReportReview } from "@/features/admin/report-data";
 import {
+  isPublicSpotState,
   reportReasonLabels,
   reportStateLabels,
   type ReportReason,
@@ -33,10 +34,12 @@ export default async function ReportReviewPage({ params, searchParams }: ReportR
   const { id } = await params;
   const { erreur } = await searchParams;
   const report = await getReportReview(id);
-  if (!report) notFound();
+  // Spot supprimé ou illisible : même comportement qu'avant (jointure obligatoire).
+  if (!report?.spot) notFound();
+  const spot = report.spot;
   const reviewAction = reviewReportAction.bind(null, report.id);
   const isFinal = ["resolved", "dismissed"].includes(report.state);
-  const publicSpotVisible = ["published", "sensitive", "review_due"].includes(report.spot.publication_state);
+  const publicSpotVisible = isPublicSpotState(spot.publication_state);
 
   return (
     <main className="admin-form-page">
@@ -45,10 +48,10 @@ export default async function ReportReviewPage({ params, searchParams }: ReportR
         <header className="review-heading">
           <div>
             <div className="chip-row"><span className={`priority-chip ${report.priority}`}>{report.priority === "high" ? "Prioritaire" : "Normal"}</span><span className="status-chip">{reportStateLabels[report.state as keyof typeof reportStateLabels] ?? report.state}</span></div>
-            <h1>{report.spot.name}</h1>
-            <p>{report.spot.municipality} · reçu le {new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeStyle: "short" }).format(new Date(report.createdAt))}</p>
+            <h1>{spot.name}</h1>
+            <p>{spot.municipality} · reçu le {new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeStyle: "short" }).format(new Date(report.createdAt))}</p>
           </div>
-          {publicSpotVisible ? <a className="button button-secondary" href={`/spots/${report.spot.slug}`} target="_blank" rel="noreferrer">Voir la fiche <ExternalLink size={14} /></a> : null}
+          {publicSpotVisible ? <a className="button button-secondary" href={`/spots/${spot.slug}`} target="_blank" rel="noreferrer">Voir la fiche <ExternalLink size={14} /></a> : null}
         </header>
         {erreur ? <p className="form-error" role="alert">{errors[erreur] ?? errors.traitement}</p> : null}
 
@@ -58,7 +61,7 @@ export default async function ReportReviewPage({ params, searchParams }: ReportR
             <dl>
               <div><dt>Motif</dt><dd>{reportReasonLabels[report.reason as ReportReason] ?? report.reason}</dd></div>
               <div><dt>Priorité</dt><dd>{report.priority === "high" ? "Haute" : "Normale"}</dd></div>
-              <div><dt>État de la fiche</dt><dd>{report.spot.publication_state}</dd></div>
+              <div><dt>État de la fiche</dt><dd>{spot.publication_state}</dd></div>
             </dl>
             <h3>Constat du visiteur</h3><p>{report.comment}</p>
             <h3>Contact privé</h3><p>{report.reporterEmail ?? "Aucune adresse fournie"}</p>

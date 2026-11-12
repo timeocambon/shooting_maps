@@ -60,3 +60,33 @@ export function reportNeedsContact(reason: ReportReason): boolean {
     "private_property_or_nuisance",
   ].includes(reason);
 }
+
+/** Signalements encore à traiter (file de modération). */
+export const OPEN_REPORT_STATES = ["open", "in_review"] as const;
+
+/** États où la fiche du spot reste consultable publiquement. */
+export const PUBLIC_SPOT_STATES = ["published", "sensitive", "review_due"] as const;
+
+export function isPublicSpotState(state: string): boolean {
+  return (PUBLIC_SPOT_STATES as readonly string[]).includes(state);
+}
+
+export const spotPublicationStateLabels: Record<string, string> = {
+  published: "Publié",
+  hidden: "Masqué",
+  sensitive: "Sensible",
+  archived: "Archivé",
+  review_due: "À revérifier",
+};
+
+/** Ordre de la file : priorité haute d'abord, puis les plus anciens. */
+export function compareReportsForQueue(
+  left: { priority: string; createdAt: string },
+  right: { priority: string; createdAt: string },
+): number {
+  const rank = (priority: string) => (priority === "high" ? 0 : 1);
+  return (
+    rank(left.priority) - rank(right.priority) ||
+    Date.parse(left.createdAt) - Date.parse(right.createdAt)
+  );
+}
