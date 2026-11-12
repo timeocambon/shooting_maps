@@ -228,6 +228,8 @@ describe("GET /api/admin/mobile/reports/{id}", () => {
       stateLabel: "Ouvert",
       createdAt: "2026-11-10T08:00:00Z",
       message: "Le portail est désormais fermé à clé.",
+      canDecide: true,
+      defaultHideSpot: true,
       spot: {
         id: SPOT_ID,
         name: "Quai de la Daurade",

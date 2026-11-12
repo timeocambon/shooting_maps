@@ -1,5 +1,6 @@
 import {
   isPublicSpotState,
+  OPEN_REPORT_STATES,
   reportReasonLabels,
   reportStateLabels,
   spotPublicationStateLabels,
@@ -28,6 +29,10 @@ export type MobileReportItem = {
 
 export type MobileReportDetail = MobileReportItem & {
   message: string;
+  /** Décision possible : signalement encore à traiter (ouvert ou en cours). */
+  canDecide: boolean;
+  /** Masquage proposé par défaut (priorité haute), comme sur le site. */
+  defaultHideSpot: boolean;
   spot: MobileReportItem["spot"] & {
     municipality: string;
     categories: string[];
@@ -99,6 +104,8 @@ export function toMobileReportDetail(
   return {
     ...toItem(report, spot),
     message: report.comment,
+    canDecide: (OPEN_REPORT_STATES as readonly string[]).includes(report.state),
+    defaultHideSpot: report.priority === "high",
     spot: {
       id: spot.id,
       name: spot.name,
