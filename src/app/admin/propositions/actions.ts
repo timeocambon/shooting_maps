@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getAdminSessionState } from "@/features/admin/admin-session";
 import { MAX_EXCHANGE_LENGTH } from "@/features/proposals/domain/change-request";
-import { sendProposalDecisionEmail } from "@/features/proposals/server/confirmation-email";
+import { decideProposal, type DecisionFailure } from "@/features/proposals/server/proposal-decision";
 import { requestProposalChanges } from "@/features/proposals/server/request-changes";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -17,6 +17,8 @@ const reviewSchema = z.object({
   publicMessage: z.string().trim().max(MAX_EXCHANGE_LENGTH),
   displayPrecision: z.enum(["exact", "approximate"]),
   sensitive: z.boolean(),
+  /** Version de la fiche affichée (updated_at) : refus si la proposition a changé. */
+  version: z.string().max(64),
 });
 
 export async function reviewProposalAction(proposalId: string, formData: FormData) {
@@ -30,6 +32,7 @@ export async function reviewProposalAction(proposalId: string, formData: FormDat
     publicMessage: formData.get("publicMessage") ?? "",
     displayPrecision: formData.get("displayPrecision") ?? "exact",
     sensitive: formData.get("sensitive") === "on",
+    version: formData.get("version") ?? "",
   });
   if (!parsed.success) redirect(`/admin/propositions/${proposalId}?erreur=validation`);
   if (parsed.data.decision === "changes_requested" && !parsed.data.publicMessage) {
@@ -37,13 +40,6 @@ export async function reviewProposalAction(proposalId: string, formData: FormDat
   }
 
   const supabase = await createSupabaseServerClient();
-  const publishedPaths: string[] = [];
-  const publicUrls: string[] = [];
-  const { data: contact } = await supabase
-    .from("proposals")
-    .select("contributor_email, tracking_id")
-    .eq("id", proposalId)
-    .maybeSingle();
 
   if (parsed.data.decision === "changes_requested") {
     // Demande de précisions : message public (visible du contributeur) et
@@ -68,74 +64,30 @@ export async function reviewProposalAction(proposalId: string, formData: FormDat
     redirect(`/admin/propositions?decision=changes_requested`);
   }
 
-  if (parsed.data.decision === "approved") {
-    const { data: proposal, error: proposalError } = await supabase
-      .from("proposals")
-      .select("id, state, proposal_photos(processed_object_path, display_order)")
-      .eq("id", proposalId)
-      .single();
-    if (proposalError || proposal.state !== "submitted") {
-      redirect(`/admin/propositions/${proposalId}?erreur=deja-traitee`);
-    }
-
-    const photos = proposal.proposal_photos
-      .filter((photo) => photo.processed_object_path)
-      .sort((left, right) => left.display_order - right.display_order);
-    if (photos.length < 2 || photos.length > 6) {
-      redirect(`/admin/propositions/${proposalId}?erreur=photos`);
-    }
-
-    try {
-      for (const [index, photo] of photos.entries()) {
-        const { data: image, error: downloadError } = await supabase.storage
-          .from("spot-originals")
-          .download(photo.processed_object_path!);
-        if (downloadError) throw downloadError;
-
-        const publicPath = `spots/${proposalId}/${String(index + 1).padStart(2, "0")}.webp`;
-        const { error: uploadError } = await supabase.storage
-          .from("spot-published")
-          .upload(publicPath, await image.arrayBuffer(), {
-            contentType: "image/webp",
-            cacheControl: "31536000",
-            upsert: false,
-          });
-        if (uploadError) throw uploadError;
-        publishedPaths.push(publicPath);
-        publicUrls.push(supabase.storage.from("spot-published").getPublicUrl(publicPath).data.publicUrl);
-      }
-    } catch {
-      if (publishedPaths.length) await supabase.storage.from("spot-published").remove(publishedPaths);
-      redirect(`/admin/propositions/${proposalId}?erreur=publication-photos`);
-    }
-  }
-
-  const { error } = await supabase.rpc("admin_review_proposal", {
-    p_proposal_id: parsed.data.proposalId,
-    p_decision: parsed.data.decision,
-    p_internal_note: parsed.data.internalNote,
-    p_display_precision: parsed.data.displayPrecision,
-    p_sensitive: parsed.data.sensitive,
-    p_published_paths: publishedPaths,
-    p_public_urls: publicUrls,
+  // Publication, refus, doublon : logique partagée avec l'administration mobile
+  // (verrou de décision, photos traitées uniquement, nettoyage, e-mail sans note).
+  const result = await decideProposal(supabase, {
+    proposalId: parsed.data.proposalId,
+    decision: parsed.data.decision,
+    internalNote: parsed.data.internalNote,
+    displayPrecision: parsed.data.displayPrecision,
+    sensitive: parsed.data.sensitive,
+    expectedVersion: parsed.data.version || null,
   });
-
-  if (error) {
-    if (publishedPaths.length) await supabase.storage.from("spot-published").remove(publishedPaths);
-    const code = error.message.includes("proposal_already_reviewed") ? "deja-traitee" : "decision";
-    redirect(`/admin/propositions/${proposalId}?erreur=${code}`);
+  if (!result.ok) {
+    redirect(`/admin/propositions/${proposalId}?erreur=${DECISION_ERRORS[result.reason]}`);
   }
-
-  if (contact) {
-    await sendProposalDecisionEmail({
-      email: contact.contributor_email,
-      trackingId: contact.tracking_id,
-      decision: parsed.data.decision,
-    });
-  }
-
-  revalidatePath("/");
-  revalidatePath("/admin");
-  revalidatePath("/admin/propositions");
   redirect(`/admin/propositions?decision=${parsed.data.decision}`);
 }
+
+const DECISION_ERRORS: Record<DecisionFailure, string> = {
+  forbidden: "decision",
+  not_found: "deja-traitee",
+  already_reviewed: "deja-traitee",
+  proposal_changed: "modifiee",
+  decision_in_progress: "en-cours",
+  invalid_photo_count: "photos",
+  photo_download_failed: "publication-photos",
+  photo_publish_failed: "publication-photos",
+  decision_failed: "decision",
+};

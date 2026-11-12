@@ -744,6 +744,14 @@ export type Database = {
         Args: { p_action: string }
         Returns: string
       }
+      admin_claim_proposal_decision: {
+        Args: { p_expected_version?: string; p_proposal_id: string }
+        Returns: Json
+      }
+      admin_release_proposal_decision: {
+        Args: { p_claim_id: string }
+        Returns: undefined
+      }
       admin_delete_photographer: {
         Args: { p_photographer_id: string }
         Returns: string[]

@@ -77,12 +77,14 @@ export function buildProposalDecisionEmail(input: {
   decision: ProposalDecision;
   publicMessage?: string | null;
   siteUrl: string;
+  /** Page publique du spot publié (absente pour un lieu sensible). */
+  spotUrl?: string | null;
 }): { subject: string; html: string } {
   const trackingId = escapeHtmlText(input.trackingId);
   const messages: Record<ProposalDecision, { subject: string; body: string }> = {
     approved: {
       subject: `Votre proposition ${input.trackingId} est publiée`,
-      body: "<p>Votre contribution a été vérifiée et publiée sur Spotride.</p>",
+      body: "<p>Votre contribution a été vérifiée et publiée sur Spotride. Merci pour ce partage !</p>",
     },
     changes_requested: {
       subject: `Des précisions sont nécessaires pour ${input.trackingId}`,
@@ -94,10 +96,14 @@ export function buildProposalDecisionEmail(input: {
     },
     duplicate: {
       subject: `Votre proposition ${input.trackingId} correspond à un spot existant`,
-      body: "<p>La proposition a été classée comme doublon lors de la modération.</p>",
+      body: "<p>Un spot similaire existe déjà sur Spotride : votre proposition a été classée comme doublon. Merci d'avoir pris le temps de la proposer.</p>",
     },
   };
   const message = messages[input.decision];
+
+  if (input.decision === "approved" && input.spotUrl) {
+    message.body += `<p><a href="${escapeHtmlText(input.spotUrl)}">Voir le spot sur Spotride</a></p>`;
+  }
 
   if (input.decision === "changes_requested") {
     const trackingUrl = new URL("/proposition-confirmee", input.siteUrl);
@@ -125,6 +131,8 @@ export async function sendProposalDecisionEmail(input: {
   decision: ProposalDecision;
   /** Message public de la demande de précisions (jamais la note interne). */
   publicMessage?: string | null;
+  /** Page publique du spot publié. */
+  spotUrl?: string | null;
 }): Promise<boolean> {
   const env = getServerEnv();
   if (!env.BREVO_API_KEY || !env.BREVO_SENDER_EMAIL) return false;
@@ -134,6 +142,7 @@ export async function sendProposalDecisionEmail(input: {
     decision: input.decision,
     publicMessage: input.publicMessage,
     siteUrl: env.NEXT_PUBLIC_SITE_URL,
+    spotUrl: input.spotUrl,
   });
 
   try {

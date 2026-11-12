@@ -56,6 +56,8 @@ export type ProposalReview = {
   hasNewResponse: boolean;
   /** Note interne (moderation_comment) : équipe uniquement, jamais transmise au contributeur. */
   internalNote: string | null;
+  /** `updated_at` au chargement : une décision prise sur une fiche obsolète est refusée. */
+  version: string;
 };
 
 /**
@@ -169,7 +171,7 @@ export async function getProposalReview(
   const supabase = client ?? (await createSupabaseServerClient());
   const { data, error } = await supabase
     .from("proposals")
-    .select("id, tracking_id, contributor_email, public_pseudonym, state, submitted_at, payload, moderation_comment, proposal_photos(id, display_order, credit, width, height, byte_size, processed_object_path, moderation_state), proposal_change_requests(id, public_message, requested_at, response, responded_at, closed_at)")
+    .select("id, tracking_id, contributor_email, public_pseudonym, state, submitted_at, updated_at, payload, moderation_comment, proposal_photos(id, display_order, credit, width, height, byte_size, processed_object_path, moderation_state), proposal_change_requests(id, public_message, requested_at, response, responded_at, closed_at)")
     .eq("id", id)
     .maybeSingle();
 
@@ -213,5 +215,6 @@ export async function getProposalReview(
     exchanges,
     hasNewResponse: hasUnreviewedResponse(data.state, exchanges),
     internalNote: data.moderation_comment,
+    version: data.updated_at,
   };
 }

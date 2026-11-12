@@ -18,6 +18,8 @@ const errors: Record<string, string> = {
   photos: "La proposition doit contenir entre deux et six photos traitées.",
   "publication-photos": "Les variantes publiques n'ont pas pu être préparées.",
   "deja-traitee": "Cette proposition a déjà été traitée dans une autre session.",
+  modifiee: "La proposition a changé depuis l'ouverture de cette page. Vérifiez-la avant de décider.",
+  "en-cours": "Une décision est déjà en cours pour cette proposition. Réessayez dans quelques instants.",
   "message-public": "Une demande de précisions nécessite un message au contributeur (2 000 caractères maximum).",
   decision: "La décision n'a pas pu être enregistrée.",
 };
@@ -96,6 +98,7 @@ export default async function ProposalPage({ params, searchParams }: ProposalPag
             {proposal.state === "submitted" ? <>
               <p>Une seule décision est possible. En cas de publication, les images nettoyées deviennent publiques ; les originaux restent privés.</p>
               <form action={reviewAction}>
+                <input type="hidden" name="version" value={proposal.version} />
                 <label>Précision affichée<select name="displayPrecision" defaultValue={proposal.payload.displayPrecision}><option value="exact">Exacte</option><option value="approximate">Approximative</option></select></label>
                 <label className="check-row"><input type="checkbox" name="sensitive" defaultChecked={proposal.payload.locationStatus === "sensitive"} /><span>Classer le lieu comme sensible</span></label>
                 <label>Message au contributeur <small>obligatoire pour « Demander des précisions », visible par le contributeur dans l&apos;application et par e-mail</small><textarea name="publicMessage" rows={5} maxLength={2000} placeholder="Ex. Pouvez-vous préciser où se garer et si l'accès est autorisé le week-end ?" /></label>

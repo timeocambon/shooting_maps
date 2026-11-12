@@ -70,6 +70,7 @@ type ReviewSource = {
   exchanges: ProposalExchange[];
   hasNewResponse: boolean;
   internalNote: string | null;
+  version: string;
 };
 
 export type MobileProposalDetail = {
@@ -95,6 +96,10 @@ export type MobileProposalDetail = {
   canRequestChanges: boolean;
   /** Note interne : équipe uniquement. */
   internalNote: string | null;
+  /** Décision finale possible (proposition en vérification). */
+  canDecide: boolean;
+  /** Version de la fiche, renvoyée avec la décision (refus si elle a changé). */
+  version: string;
 };
 
 /** Lien signé de Supabase Storage (`/storage/v1/object/sign/…?token=…`) du projet configuré. */
@@ -141,6 +146,8 @@ export function toMobileDetail(
     hasOpenRequest,
     canRequestChanges: review.state === "submitted" && !hasOpenRequest,
     internalNote: review.internalNote,
+    canDecide: review.state === "submitted",
+    version: review.version,
   };
 }
 
